@@ -36,8 +36,10 @@ cp -r .claude/ /path/to/your-project/.claude/
 ### 라이프사이클
 
 ```
-/plan → /phase → commit → /codex-review + /self-review → (push)
+/plan → /phase (구현 + 리뷰 포함) → (push)
 ```
+
+`/phase`는 구현, 커밋, `/codex-review`, `/self-review`를 내부에서 순차 수행한다. 리뷰를 별도로 실행하려면 `/phase` 없이 직접 호출한다.
 
 ## 프로젝트별 확장
 
