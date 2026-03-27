@@ -15,7 +15,8 @@
       "Bash(wc:*)",
       "Bash(jq:*)",
       "Bash(diff:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(codex:*)"
     ]
   }
 }
