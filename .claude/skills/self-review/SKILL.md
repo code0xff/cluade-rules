@@ -1,12 +1,12 @@
 ---
 name: self-review
-description: Push 전 thinking mode 반복 심층 리뷰 — 수정할 항목이 없을 때까지 분석-수정 사이클을 반복한다
+description: 구현 완료 후 thinking mode 반복 심층 리뷰 — 수정할 항목이 없을 때까지 분석-수정 사이클을 반복한다
 user_invocable: true
 ---
 
 # Self Review
 
-push 전에 thinking mode로 unpushed commit의 변경 사항을 심층 분석하고 타당한 개선을 코드에 반영한다.
+구현 완료 후 thinking mode로 변경 사항을 심층 분석하고 타당한 개선을 코드에 반영한다.
 수정이 발생하면 재분석하여 더 이상 반영할 항목이 없을 때까지 반복한다.
 
 ## 1. 변경 사항 수집

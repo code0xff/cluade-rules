@@ -1,12 +1,12 @@
 ---
 name: codex-review
-description: Push 전 OpenAI Codex 반복 리뷰 — 수정할 항목이 없을 때까지 리뷰-수정 사이클을 반복한다
+description: 구현 완료 후 OpenAI Codex 반복 리뷰 — 수정할 항목이 없을 때까지 리뷰-수정 사이클을 반복한다
 user_invocable: true
 ---
 
 # Codex Review
 
-push 전에 OpenAI Codex CLI로 unpushed commit을 리뷰하고, 결과를 평가하여 타당한 지적은 코드에 반영한다.
+구현 완료 후 OpenAI Codex CLI로 변경 사항을 리뷰하고, 결과를 평가하여 타당한 지적은 코드에 반영한다.
 수정이 발생하면 재리뷰하여 더 이상 반영할 항목이 없을 때까지 반복한다.
 
 ## 0. 사전 확인

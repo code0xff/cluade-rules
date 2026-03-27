@@ -30,8 +30,8 @@ cp -r .claude/ /path/to/your-project/.claude/
 |------|------|
 | `/plan` | 구현 전 설계 및 계획 수립 |
 | `/phase` | Phase 시작~종료 오케스트레이션 |
-| `/codex-review` | Push 전 외부 Codex CLI 반복 리뷰 |
-| `/self-review` | Push 전 내부 thinking mode 반복 리뷰 |
+| `/codex-review` | 구현 완료 후 외부 Codex CLI 반복 리뷰 |
+| `/self-review` | 구현 완료 후 내부 thinking mode 반복 리뷰 |
 
 ### 라이프사이클
 
