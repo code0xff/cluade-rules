@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+      "Bash(git:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(which:*)",
+      "Bash(pwd)",
+      "Bash(cat:*)",
+      "Bash(wc:*)",
+      "Bash(jq:*)",
+      "Bash(diff:*)",
+      "Bash(echo:*)"
+    ]
+  }
+}
