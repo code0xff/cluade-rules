@@ -1,11 +1,3 @@
----
-paths:
-  - "tests/**"
-  - "test/**"
-  - "**/*.test.*"
-  - "**/*.spec.*"
----
-
 ## Test Layers
 
 - unit tests — 순수 함수, 개별 모듈 로직
