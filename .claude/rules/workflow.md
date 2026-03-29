@@ -30,6 +30,15 @@ phase 기반 개발을 하는 프로젝트에서 적용한다:
 - 이번 작업의 구현 범위를 현재 phase 안으로 잠근다.
 - roadmap phase 범위를 넘어 구현하지 않는다.
 
+## Phase Completion Verification
+
+phase 구현 완료 시 다음 리뷰를 반드시 수행한다:
+
+- `/codex-review`로 외부 리뷰를 실행하고, 지적 사항을 평가하여 타당한 항목은 반영한다.
+- `/self-review`로 내부 심층 분석을 실행하고, 버그·계약 불일치·설계 위반을 확인하여 반영한다.
+- 두 리뷰 모두 즉시 반영 항목이 0건(clean pass)이 될 때까지 반복한다.
+- 리뷰 결과를 사용자에게 보고한다.
+
 ## Future Ideas Rule
 
 - future 확장 아이디어는 architecture 또는 roadmap의 future note에 남긴다. 해당 문서가 없는 프로젝트에서는 이슈 트래커에 기록한다.
