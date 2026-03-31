@@ -35,7 +35,7 @@ user-invocable: true
 
 변경 유형에 해당하는 테스트만 작성한다 (testing.md "When to Use Which" 참조). 모든 단계를 반드시 거칠 필요는 없다.
 
-구현 중 사용자 요청으로 설계가 변경되면: 해당 변경을 문서(architecture, roadmap, phase 등)에 먼저 반영하고, 변경된 설계에 따라 코드를 수정한 뒤, `/codex-review` + `/self-review`를 실행한다. 리뷰 완료 후 나머지 구현을 이어간다.
+구현 중 사용자 요청으로 설계가 변경되면: 해당 변경을 문서(architecture, roadmap, phase 등)에 먼저 반영하고, 변경된 설계에 따라 코드를 수정한 뒤, `/self-review` → `/codex-review` → `/security-review`를 실행한다. 리뷰 완료 후 나머지 구현을 이어간다.
 
 ## 3. 구현 완료 후 코드 리뷰
 
@@ -51,15 +51,22 @@ user-invocable: true
 
 ### 전체 리뷰 (그 외 모든 경우)
 
-#### 3-1. Codex Review (외부 도구)
+다음 순서대로 실행한다. 각 리뷰의 수정이 커밋된 후 다음 리뷰를 진행한다.
+
+#### 3-1. Self Review (thinking mode 심층 분석)
+- [ ] `/self-review`로 thinking mode 심층 리뷰를 실행했다.
+- [ ] 즉시 반영 항목이 코드에 적용되었다.
+- [ ] 사용자 판단 필요 항목이 보고되었고, 사용자 확인을 받았다.
+
+#### 3-2. Codex Review (외부 도구)
 - [ ] `/codex-review`로 Codex CLI 리뷰를 실행했다.
 - [ ] 즉시 반영 항목이 코드에 적용되었다.
 - [ ] 사용자 판단 필요 항목이 보고되었고, 사용자 확인을 받았다.
 
-(`codex` CLI가 없거나 실행이 실패하면(네트워크, 인증 등) 이 단계를 건너뛰고 3-2 Self Review만 수행한다.)
+(`codex` CLI가 없거나 실행이 실패하면(네트워크, 인증 등) 이 단계를 건너뛰고 3-3 Security Review로 진행한다.)
 
-#### 3-2. Self Review (thinking mode 심층 분석)
-- [ ] `/self-review`로 thinking mode 심층 리뷰를 실행했다.
+#### 3-3. Security Review (보안 관점 분석)
+- [ ] `/security-review`로 보안 리뷰를 실행했다.
 - [ ] 즉시 반영 항목이 코드에 적용되었다.
 - [ ] 사용자 판단 필요 항목이 보고되었고, 사용자 확인을 받았다.
 
