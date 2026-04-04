@@ -12,20 +12,21 @@ cp -r .claude/ /path/to/your-project/.claude/
 
 ## 구성
 
-## 범용 Harness 확장 (Codex Plan + Claude Build)
+## Harness 정책
 
-이 저장소는 Claude 중심 규칙을 유지하면서도, 아래 문서로 **모델 분업형 범용 harness**로 바로 운용할 수 있다.
+이 저장소의 기본 엔진은 **Claude Code**다.
 
-- `WORKFLOW_FEATURE.md` — 표준 개발 파이프라인
-  - 기본: **Codex(Plan) → Claude(Build) → Codex(Review) → Claude(Fix)**
-- `MODEL_ROUTING_POLICY.md` — 역할별 모델 라우팅 정책
-- `CHECKLIST_DONE.md` — Definition of Done 체크리스트
+다만 개발 업무 정형화를 위해 아래 게이트를 **필수**로 강제한다.
 
-권장 운영:
-1. 작업 시작 시 Codex로 `plan` 산출
-2. Claude로 구현 (plan lock 준수)
-3. Codex로 교차 리뷰
-4. 체크리스트 통과 시 완료
+1. Plan: `/plan` (**Codex 필수**)
+2. Build: 구현 실행 (**Claude 필수**)
+3. Review: `/codex-review` (**Codex 필수**)
+
+즉, 기본 플로우는 다음과 같다.
+
+`Codex Plan → Claude Build → Codex Review`
+
+세부 강제 규칙은 `.claude/rules/workflow.md`와 `CLAUDE.md`를 기준으로 한다.
 
 
 ### Rules (7개) — 개발 원칙

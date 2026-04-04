@@ -23,6 +23,16 @@
 - 구현 중 바뀐 설정 키, 타입, 인터페이스가 있으면 관련 문서에 반영
 - 문서 작성 기준은 docs rule을 따른다
 
+## Mandatory Harness Pipeline
+
+이 저장소의 기본 엔진은 Claude Code다. 다만 아래 단계는 필수 게이트로 강제한다.
+
+1. Plan 단계: **Codex 필수** (`/plan` 산출물)
+2. Build 단계: **Claude 필수** (plan 범위 내 구현)
+3. Review 단계: **Codex 필수** (`/codex-review`)
+
+Plan(Codex) 또는 Review(Codex) 중 하나라도 누락되면 작업 완료로 간주하지 않는다.
+
 ## Phase Execution Rules
 
 phase 기반 개발을 하는 프로젝트에서 적용한다:
@@ -32,6 +42,8 @@ phase 기반 개발을 하는 프로젝트에서 적용한다:
 - 테스트 없이 핵심 계약이나 인터페이스를 추가하지 않는다.
 - 이번 작업의 구현 범위를 현재 phase 안으로 잠근다.
 - roadmap phase 범위를 넘어 구현하지 않는다.
+- Build 단계는 Claude로 수행한다.
+- Plan 산출물 범위를 벗어나는 변경은 금지한다. 불가피한 경우 `/plan`을 다시 실행해 계획을 갱신한다.
 
 ## Phase Completion Verification
 
@@ -40,9 +52,10 @@ phase 구현 중과 완료 시 다음 리뷰를 수행한다:
 - `/self-review`는 phase 실행 중 feature 단위마다 실행하여 문제를 조기에 발견한다.
 - phase 완료 시 다음 순서대로 실행한다. 각 리뷰의 수정이 커밋된 후 다음 리뷰를 진행하여, 항상 최신 코드를 대상으로 분석한다.
 
-1. `/codex-review`로 외부 리뷰를 실행하고, 지적 사항을 평가하여 타당한 항목은 반영한다.
+1. `/codex-review`로 외부 리뷰를 실행하고, 지적 사항을 평가하여 타당한 항목은 반영한다. (**필수 게이트**)
 2. `/security-review`로 보안 관점 분석을 실행하고, 취약점·민감 정보 노출·권한 문제를 확인하여 반영한다.
 
+- `/codex-review`가 누락되거나 미해결 지적이 남아 있으면 완료 보고를 금지한다.
 - 모든 리뷰가 즉시 반영 항목이 0건(clean pass)이 될 때까지 반복한다.
 - 리뷰 결과를 사용자에게 보고한다.
 
