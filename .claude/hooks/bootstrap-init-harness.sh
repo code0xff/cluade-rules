@@ -57,6 +57,16 @@ get_automation_value() {
   grep -E "^- ${key}:" "$AUTOMATION_FILE" | head -n 1 | sed -E "s/^- ${key}:[[:space:]]*//" || true
 }
 
+set_automation_if_unset() {
+  local key="$1"
+  local value="$2"
+  local current
+  current="$(get_automation_value "$key")"
+  if [ -z "$current" ] || [ "$current" = "unset" ]; then
+    set_automation_key "$key" "$value"
+  fi
+}
+
 set_contract_key() {
   local key="$1"
   local value="$2"
@@ -214,7 +224,34 @@ else
   set_automation_key "engine_cmd_openai" "unset"
 fi
 
-# 4) approvals allowlist 자동 보강
+# 4) stage/fix 기본값 자동 연결
+build_cmd="$(get_automation_value build_cmd)"
+test_cmd="$(get_automation_value test_cmd)"
+quality_cmd="$(get_automation_value quality_cmd)"
+if [ "$build_cmd" != "unset" ]; then
+  set_automation_if_unset "implement_cmd" "$build_cmd"
+fi
+if [ "$quality_cmd" != "unset" ]; then
+  set_automation_if_unset "review_cmd" "$quality_cmd"
+elif [ "$test_cmd" != "unset" ]; then
+  set_automation_if_unset "review_cmd" "$test_cmd"
+fi
+if [ "$build_cmd" != "unset" ]; then
+  set_automation_if_unset "build_fix_cmd" "$build_cmd"
+fi
+if [ "$test_cmd" != "unset" ]; then
+  set_automation_if_unset "test_fix_cmd" "$test_cmd"
+fi
+lint_cmd="$(get_automation_value lint_cmd)"
+security_cmd="$(get_automation_value security_cmd)"
+if [ "$lint_cmd" != "unset" ]; then
+  set_automation_if_unset "lint_fix_cmd" "$lint_cmd"
+fi
+if [ "$security_cmd" != "unset" ]; then
+  set_automation_if_unset "security_fix_cmd" "$security_cmd"
+fi
+
+# 5) approvals allowlist 자동 보강
 ensure_allowlist_item "git add"
 ensure_allowlist_item "git commit"
 ensure_allowlist_item "git push"
@@ -227,7 +264,7 @@ for key in lint_cmd build_cmd test_cmd plan_cmd implement_cmd review_cmd quality
   fi
 done
 
-# 5) completion contract 자동 연결
+# 6) completion contract 자동 연결
 build_cmd="$(get_automation_value build_cmd)"
 test_cmd="$(get_automation_value test_cmd)"
 quality_cmd="$(get_automation_value quality_cmd)"
@@ -241,6 +278,7 @@ set_contract_key "release_readiness_cmd" "$quality_cmd"
 
 echo "init-harness bootstrap 완료:"
 echo "- automation gates/quality/engine adapter 값 자동 설정"
+echo "- stage/fix 기본 명령 자동 연결"
 echo "- approvals allowlist 자동 보강"
 echo "- completion contract 기본값 자동 설정"
 exit 0

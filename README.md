@@ -110,6 +110,7 @@ cp -r .claude/ /path/to/your-project/.claude/
 
 이 명령은 gate/quality/engine adapter 기본값과 approvals allowlist를 자동으로 채운다.
 또한 completion contract를 현재 게이트 명령 기준으로 자동 연결한다.
+또한 stage/fix 기본 명령(`implement_cmd`, `review_cmd`, `*_fix_cmd`)을 자동 연결한다.
 
 ## Non-Blocking Automation Policy
 
@@ -147,6 +148,13 @@ cp -r .claude/ /path/to/your-project/.claude/
 
 기본값은 `engine_runtime_mode: strict`, `execute_engine_commands: true`이며, 엔진 준비 상태를 강제 검증한다.
 엔진 바이너리 미설치 환경에서는 `stub-fallback` + `allow_engine_stub: true`로 완화할 수 있다.
+
+stage 실행과 복구에는 fallback 체인이 적용된다.
+
+- `plan`: stage command → engine intent → inferred command
+- `implement`: stage command → inferred command(build/test) → engine intent
+- `review`: stage command → inferred command(quality/test) → engine intent
+- gate fix: `<gate>_fix_cmd` → gate command → `implement_cmd` → gate 재감지
 
 ## CI Enforcement
 

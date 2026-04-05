@@ -57,28 +57,123 @@ get_value() {
   grep -E "^- ${key}:" "$AUTOMATION_FILE" | head -n 1 | sed -E "s/^- ${key}:[[:space:]]*//" || true
 }
 
-run_stage_with_intent_fallback() {
+infer_stage_cmd() {
+  local stage="$1"
+  case "$stage" in
+    implement)
+      local build_cmd test_cmd
+      build_cmd="$(get_value build_cmd)"
+      test_cmd="$(get_value test_cmd)"
+      if [ -n "$build_cmd" ] && [ "$build_cmd" != "unset" ]; then
+        echo "$build_cmd"
+        return 0
+      fi
+      if [ -n "$test_cmd" ] && [ "$test_cmd" != "unset" ]; then
+        echo "$test_cmd"
+        return 0
+      fi
+      ;;
+    review)
+      local quality_cmd test_cmd
+      quality_cmd="$(get_value quality_cmd)"
+      test_cmd="$(get_value test_cmd)"
+      if [ -n "$quality_cmd" ] && [ "$quality_cmd" != "unset" ]; then
+        echo "$quality_cmd"
+        return 0
+      fi
+      if [ -n "$test_cmd" ] && [ "$test_cmd" != "unset" ]; then
+        echo "$test_cmd"
+        return 0
+      fi
+      ;;
+  esac
+  echo "unset"
+}
+
+run_stage_cmd() {
+  local stage="$1"
+  local cmd="$2"
+  local source="$3"
+  "$STATE_HOOK" checkpoint "$stage" "${source}: ${cmd}"
+  if eval "$cmd"; then
+    "$STATE_HOOK" checkpoint "$stage" "ok (${source})"
+    return 0
+  fi
+  return 1
+}
+
+run_stage_with_fallback() {
   local stage="$1"
   local cmd="$2"
   local intent="$3"
   local goal="$4"
-  if [ "$cmd" = "unset" ]; then
+  local inferred_cmd
+  inferred_cmd="$(infer_stage_cmd "$stage")"
+
+  export AUTOPILOT_GOAL="$goal"
+
+  if [ "$stage" = "plan" ]; then
+    if [ "$cmd" != "unset" ] && run_stage_cmd "$stage" "$cmd" "stage-cmd"; then
+      return 0
+    fi
     "$STATE_HOOK" checkpoint "$stage" "engine-intent: ${intent}"
     if "$ENGINE_HOOK" "$intent" "$goal"; then
       "$STATE_HOOK" checkpoint "$stage" "ok (engine-intent)"
+      return 0
+    fi
+    if [ "$inferred_cmd" != "unset" ] && [ "$inferred_cmd" != "$cmd" ] && run_stage_cmd "$stage" "$inferred_cmd" "inferred-cmd"; then
       return 0
     fi
     "$STATE_HOOK" fail "stage=${stage}"
     return 2
   fi
 
-  "$STATE_HOOK" checkpoint "$stage" "run: $cmd"
-  if eval "$cmd"; then
-    "$STATE_HOOK" checkpoint "$stage" "ok"
+  if [ "$cmd" != "unset" ] && run_stage_cmd "$stage" "$cmd" "stage-cmd"; then
+    return 0
+  fi
+  if [ "$inferred_cmd" != "unset" ] && [ "$inferred_cmd" != "$cmd" ] && run_stage_cmd "$stage" "$inferred_cmd" "inferred-cmd"; then
+    return 0
+  fi
+  "$STATE_HOOK" checkpoint "$stage" "engine-intent: ${intent}"
+  if "$ENGINE_HOOK" "$intent" "$goal"; then
+    "$STATE_HOOK" checkpoint "$stage" "ok (engine-intent)"
     return 0
   fi
   "$STATE_HOOK" fail "stage=${stage}"
   return 2
+}
+
+resolve_fix_cmd() {
+  local failed_gate="$1"
+  local implement_cmd="$2"
+  local fix_key fix_cmd gate_cmd
+
+  fix_key="${failed_gate}_fix_cmd"
+  fix_cmd="$(get_value "$fix_key")"
+  if [ -n "$fix_cmd" ] && [ "$fix_cmd" != "unset" ]; then
+    echo "$fix_cmd"
+    return 0
+  fi
+
+  gate_cmd="unset"
+  case "$failed_gate" in
+    lint) gate_cmd="$(get_value lint_cmd)" ;;
+    build) gate_cmd="$(get_value build_cmd)" ;;
+    test) gate_cmd="$(get_value test_cmd)" ;;
+    security) gate_cmd="$(get_value security_cmd)" ;;
+  esac
+
+  if [ -n "$gate_cmd" ] && [ "$gate_cmd" != "unset" ]; then
+    echo "$gate_cmd"
+    return 0
+  fi
+
+  if [ -n "$implement_cmd" ] && [ "$implement_cmd" != "unset" ]; then
+    echo "$implement_cmd"
+    return 0
+  fi
+
+  echo ".claude/hooks/suggest-automation-gates.sh"
 }
 
 run_validate_stage() {
@@ -93,15 +188,7 @@ run_validate_stage() {
 
     failed_gate=$(jq -r '.last_gate // ""' "$STATE_FILE")
     [ -z "$failed_gate" ] && failed_gate="unknown"
-    fix_key="${failed_gate}_fix_cmd"
-    fix_cmd="$(get_value "$fix_key")"
-    if [ -z "$fix_cmd" ] || [ "$fix_cmd" = "unset" ]; then
-      if [ "$implement_cmd" != "unset" ]; then
-        fix_cmd="$implement_cmd"
-      else
-        fix_cmd=".claude/hooks/suggest-automation-gates.sh"
-      fi
-    fi
+    fix_cmd="$(resolve_fix_cmd "$failed_gate" "$implement_cmd")"
 
     "$STATE_HOOK" checkpoint "fix" "gate=${failed_gate} attempt=${attempt} cmd=${fix_cmd}"
     if ! eval "$fix_cmd"; then
@@ -161,16 +248,16 @@ run_sequence_from() {
   for stage in "${stages[@]}"; do
     case "$stage" in
       plan)
-        run_stage_with_intent_fallback "plan" "$plan_cmd" "plan" "$goal" || return 2
+        run_stage_with_fallback "plan" "$plan_cmd" "plan" "$goal" || return 2
         ;;
       implement)
-        run_stage_with_intent_fallback "implement" "$implement_cmd" "build" "$goal" || return 2
+        run_stage_with_fallback "implement" "$implement_cmd" "build" "$goal" || return 2
         ;;
       validate)
         run_validate_stage "$max_fix_attempts" "$implement_cmd" || return 2
         ;;
       review)
-        run_stage_with_intent_fallback "review" "$review_cmd" "review" "$goal" || return 2
+        run_stage_with_fallback "review" "$review_cmd" "review" "$goal" || return 2
         ;;
       quality)
         run_quality_stage || return 2

@@ -38,3 +38,18 @@
 - 엔진 전환 시 rules 문서는 바꾸지 않는다.
 - 변경은 `project-profile.md`의 engine/model 값만 수정해 반영한다.
 - intent contract를 충족할 수 없는 도구는 해당 단계 엔진으로 선택하지 않는다.
+
+## Runtime Fallback Chain
+
+stage 실행은 다음 순서로 시도한다.
+
+- `plan`: stage command → engine intent → inferred command
+- `implement`: stage command → inferred command(build/test) → engine intent
+- `review`: stage command → inferred command(quality/test) → engine intent
+
+gate 실패 복구는 다음 순서로 시도한다.
+
+- `<gate>_fix_cmd`
+- 대응 gate command(`lint_cmd/build_cmd/test_cmd/security_cmd`)
+- `implement_cmd`
+- `.claude/hooks/suggest-automation-gates.sh`

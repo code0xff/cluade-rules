@@ -76,6 +76,7 @@ user-invocable: true
 
 초기 입력을 최소화하려면 아래 bootstrap을 우선 실행한다.
 이 스크립트는 gate, quality 세부 명령, engine adapter 템플릿, approvals allowlist, completion contract를 자동 채운다.
+또한 `implement_cmd`, `review_cmd`, `*_fix_cmd`를 gate 기준으로 자동 연결한다.
 
 ```bash
 .claude/hooks/bootstrap-init-harness.sh
