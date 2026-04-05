@@ -19,6 +19,22 @@ jobs:
           sudo apt-get install -y ripgrep
           rg --version
 
+      - name: Install engine stubs for CI
+        run: |
+          mkdir -p .github/bin
+          cat > .github/bin/codex <<'EOF'
+          #!/usr/bin/env bash
+          echo "codex stub (CI)"
+          exit 0
+          EOF
+          cat > .github/bin/claude <<'EOF'
+          #!/usr/bin/env bash
+          echo "claude stub (CI)"
+          exit 0
+          EOF
+          chmod +x .github/bin/codex .github/bin/claude
+          echo "$PWD/.github/bin" >> "$GITHUB_PATH"
+
       - name: Run harness regression
         run: |
           chmod +x .claude/tests/harness-regression.sh
