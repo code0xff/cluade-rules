@@ -98,6 +98,8 @@ run_expect_ok "unset config report generated" .claude/hooks/report-unset-config.
 run_expect_ok "render onboarding docs" .claude/hooks/render-onboarding-docs.sh
 run_expect_ok "project onboarding flow" .claude/hooks/run-project-onboarding.sh
 run_expect_ok "bootstrap project helper" scripts/bootstrap-project.sh --skip-onboarding
+run_expect_ok "bootstrap project standalone install" sh -c \
+  'tmpdir=$(mktemp -d) && DEV_HARNESS_SOURCE="$PWD" scripts/bootstrap-project.sh "$tmpdir" --skip-onboarding && test -d "$tmpdir/.claude" && test -d "$tmpdir/.devharness" && rm -rf "$tmpdir"'
 run_expect_ok "onboarding ready report exists" test -f ONBOARDING_READY.md
 run_expect_ok "onboarding docs generated" test -f docs/project-goal.md
 
