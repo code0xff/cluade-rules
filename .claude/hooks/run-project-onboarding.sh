@@ -3,6 +3,7 @@
 set -euo pipefail
 
 SESSION_FILE=".devharness/session.yaml"
+AUTOMATION_FILE=".claude/project-automation.md"
 SUGGEST_HOOK=".claude/hooks/suggest-automation-gates.sh"
 BOOTSTRAP_HOOK=".claude/hooks/bootstrap-init-harness.sh"
 RENDER_HOOK=".claude/hooks/render-onboarding-docs.sh"
@@ -65,6 +66,49 @@ set_status() {
   mv "${SESSION_FILE}.tmp" "$SESSION_FILE"
 }
 
+get_automation_value() {
+  local key="$1"
+  grep -E "^- ${key}:" "$AUTOMATION_FILE" | head -n 1 | sed -E "s/^- ${key}:[[:space:]]*//" || true
+}
+
+set_automation_key() {
+  local key="$1"
+  local value="$2"
+  awk -v key="$key" -v value="$value" '
+    BEGIN { updated = 0 }
+    $0 ~ "^- " key ":" {
+      print "- " key ": " value
+      updated = 1
+      next
+    }
+    { print }
+    END {
+      if (updated == 0) {
+        print "- " key ": " value
+      }
+    }
+  ' "$AUTOMATION_FILE" > "${AUTOMATION_FILE}.tmp"
+  mv "${AUTOMATION_FILE}.tmp" "$AUTOMATION_FILE"
+}
+
+relax_gate_enforcement_if_unset() {
+  local lint_cmd build_cmd test_cmd security_cmd
+  lint_cmd="$(get_automation_value lint_cmd)"
+  build_cmd="$(get_automation_value build_cmd)"
+  test_cmd="$(get_automation_value test_cmd)"
+  security_cmd="$(get_automation_value security_cmd)"
+
+  if [ "$lint_cmd" = "unset" ] || [ "$build_cmd" = "unset" ] || [ "$test_cmd" = "unset" ] || [ "$security_cmd" = "unset" ]; then
+    # Empty repositories may not have detectable gate commands yet.
+    # Keep onboarding non-blocking until project scripts are defined.
+    set_automation_key "run_gates_on_push" "false"
+    set_automation_key "run_quality_on_push" "false"
+    set_automation_key "run_gates_on_commit" "false"
+    set_automation_key "run_quality_on_commit" "false"
+    set_automation_key "enable_quality_gates" "false"
+  fi
+}
+
 render_ready_report() {
   local goal users stack status
   goal="$(get_value project_goal)"
@@ -120,6 +164,7 @@ ensure_session_file
 
 "$SUGGEST_HOOK" >/dev/null
 "$BOOTSTRAP_HOOK" >/dev/null
+relax_gate_enforcement_if_unset
 "$PROFILE_HOOK"
 "$APPROVALS_HOOK"
 "$AUTOMATION_HOOK"
