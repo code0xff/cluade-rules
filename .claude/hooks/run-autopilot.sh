@@ -12,6 +12,7 @@ ENGINE_READY_HOOK=".claude/hooks/check-engine-readiness.sh"
 UNSET_REPORT_HOOK=".claude/hooks/report-unset-config.sh"
 DONE_CHECK_HOOK=".claude/hooks/run-done-check.sh"
 QA_REGISTER_HOOK=".claude/hooks/register-qa-workstream.sh"
+FINAL_REPORT_HOOK=".claude/hooks/render-final-report.sh"
 
 if [ ! -f "$AUTOMATION_FILE" ]; then
   echo "run-autopilot 실패: $AUTOMATION_FILE 파일이 없습니다." >&2
@@ -54,6 +55,10 @@ if [ ! -x "$DONE_CHECK_HOOK" ]; then
 fi
 if [ ! -x "$QA_REGISTER_HOOK" ]; then
   echo "run-autopilot 실패: $QA_REGISTER_HOOK 실행 권한이 필요합니다." >&2
+  exit 2
+fi
+if [ ! -x "$FINAL_REPORT_HOOK" ]; then
+  echo "run-autopilot 실패: $FINAL_REPORT_HOOK 실행 권한이 필요합니다." >&2
   exit 2
 fi
 
@@ -298,6 +303,9 @@ run_delivery_stage() {
     "$STATE_HOOK" defer manual_followups "unset-config: $(echo "$unset_report" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g')" >/dev/null 2>&1 || true
   fi
 
+  "$STATE_HOOK" checkpoint "delivery" "render final report"
+  "$FINAL_REPORT_HOOK" >/dev/null
+
   if [ "${AUTOPILOT_SKIP_VCS_WRITE:-false}" = "true" ]; then
     "$STATE_HOOK" checkpoint "delivery" "skip vcs writes (AUTOPILOT_SKIP_VCS_WRITE=true)"
     return 0
@@ -417,7 +425,7 @@ unset_enforcement=${unset_enforcement:-report}
 UNSET_ENFORCEMENT="$unset_enforcement"
 plan_cmd=$(get_value "plan_cmd")
 implement_cmd=$(get_value "implement_cmd")
-review_cmd=$(get_value "review_cmd")
+  review_cmd=$(get_value "review_cmd")
 qa_cmd=$(get_value "qa_cmd")
 
 cycle=1

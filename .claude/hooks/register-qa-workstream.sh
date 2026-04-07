@@ -6,8 +6,15 @@ QA_REPORT=".claude/state/qa-report.md"
 ROADMAP_FILE="docs/roadmap.md"
 PLAN_FILE="docs/execution-plan.md"
 WORKSTREAM_DIR="docs/workstreams"
+REGISTRY_FILE=".claude/state/qa-registry.json"
+AUTOMATION_FILE=".claude/project-automation.md"
 STATE_HOOK=".claude/hooks/autopilot-state.sh"
 GOAL="${1:-autopilot-goal}"
+
+get_automation_value() {
+  local key="$1"
+  grep -E "^- ${key}:" "$AUTOMATION_FILE" | head -n 1 | sed -E "s/^- ${key}:[[:space:]]*//" || true
+}
 
 if [ ! -f "$QA_REPORT" ]; then
   echo "register-qa-workstream 실패: QA report가 없습니다." >&2
@@ -33,6 +40,26 @@ else
   slug="$(printf '%s\n' "$findings" | sha1sum | awk '{print substr($1,1,10)}')"
 fi
 workstream_file="${WORKSTREAM_DIR}/ws-qa-${slug}.md"
+max_reopens="$(get_automation_value qa_max_reopen_attempts)"
+[ -z "$max_reopens" ] && max_reopens="3"
+
+mkdir -p "$(dirname "$REGISTRY_FILE")"
+if [ ! -f "$REGISTRY_FILE" ]; then
+  echo '{}' > "$REGISTRY_FILE"
+fi
+
+current_reopens="$(jq -r --arg slug "$slug" '.[$slug] // 0' "$REGISTRY_FILE")"
+if [ "$current_reopens" -ge "$max_reopens" ]; then
+  if [ -x "$STATE_HOOK" ]; then
+    "$STATE_HOOK" defer manual_followups "qa remediation capped for ${slug}: reopen limit ${max_reopens}" >/dev/null 2>&1 || true
+  fi
+  echo "register-qa-workstream 실패: QA remediation 재등록 한도를 초과했습니다. slug=${slug}" >&2
+  exit 2
+fi
+
+tmp_registry="$(mktemp)"
+jq --arg slug "$slug" '.[$slug] = ((.[$slug] // 0) + 1)' "$REGISTRY_FILE" > "$tmp_registry"
+mv "$tmp_registry" "$REGISTRY_FILE"
 
 if [ -f "$workstream_file" ]; then
   echo "register-qa-workstream: 기존 QA workstream 재사용 ${workstream_file}"
@@ -94,6 +121,7 @@ fi
 
 if [ -x "$STATE_HOOK" ]; then
   "$STATE_HOOK" defer manual_followups "qa workstream registered: ${workstream_file}" >/dev/null 2>&1 || true
+  "$STATE_HOOK" qa-remediation "$slug" "$workstream_file" >/dev/null 2>&1 || true
 fi
 
 echo "register-qa-workstream 완료: ${workstream_file}"

@@ -77,6 +77,10 @@ model="$(get_profile_value "$model_key")"
 runtime_mode="$(get_automation_value "engine_runtime_mode")"
 allow_stub="$(get_automation_value "allow_engine_stub")"
 execute_engine_commands="$(get_automation_value "execute_engine_commands")"
+retry_attempts="$(get_automation_value "intent_retry_attempts")"
+timeout_seconds="$(get_automation_value "intent_timeout_seconds")"
+[ -z "$retry_attempts" ] && retry_attempts="1"
+[ -z "$timeout_seconds" ] && timeout_seconds="0"
 adapter_cmd="unset"
 
 case "$engine" in
@@ -136,6 +140,29 @@ fi
 } > "$artifact"
 
 binary="$(echo "$cmd" | awk '{print $1}')"
+
+run_with_timeout() {
+  local timeout_value="$1"
+  shift
+  if [ "$timeout_value" -le 0 ]; then
+    eval "$*"
+    return $?
+  fi
+
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$timeout_value" "$@" <<'PY'
+import subprocess, sys
+timeout = int(sys.argv[1])
+cmd = " ".join(sys.argv[2:])
+completed = subprocess.run(cmd, shell=True, timeout=timeout)
+sys.exit(completed.returncode)
+PY
+    return $?
+  fi
+
+  eval "$*"
+}
+
 if [ "$execute_engine_commands" != "true" ]; then
   {
     echo
@@ -146,10 +173,21 @@ if [ "$execute_engine_commands" != "true" ]; then
 fi
 
 if command -v "$binary" >/dev/null 2>&1; then
-  if eval "$cmd" >> "$artifact" 2>&1; then
-    validate_intent_artifact "$INTENT" "$artifact"
-    exit 0
-  fi
+  attempt=1
+  while [ "$attempt" -le "$retry_attempts" ]; do
+    if run_with_timeout "$timeout_seconds" "$cmd" >> "$artifact" 2>&1; then
+      validate_intent_artifact "$INTENT" "$artifact"
+      exit 0
+    fi
+    if [ "$attempt" -lt "$retry_attempts" ]; then
+      {
+        echo
+        echo "[retry]"
+        echo "attempt=${attempt} failed. retrying."
+      } >> "$artifact"
+    fi
+    attempt=$((attempt + 1))
+  done
   if [ "$runtime_mode" = "strict" ] || [ "$allow_stub" != "true" ]; then
     echo "engine-intent 실패: intent 실행 실패 ($INTENT/$engine)" >&2
     exit 2

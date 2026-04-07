@@ -109,6 +109,27 @@ detect_from_node_workspaces() {
   printf '%s%s%s%s%s%s%s\n' "$lint" "$SEP" "$build" "$SEP" "$test" "$SEP" "$security"
 }
 
+detect_from_monorepo_tools() {
+  local lint="unset"
+  local build="unset"
+  local test="unset"
+  local security="unset"
+
+  if [ -f turbo.json ]; then
+    lint="npx turbo run lint"
+    build="npx turbo run build"
+    test="npx turbo run test"
+  fi
+
+  if [ -f nx.json ]; then
+    [ "$lint" = "unset" ] && lint="npx nx run-many -t lint"
+    [ "$build" = "unset" ] && build="npx nx run-many -t build"
+    [ "$test" = "unset" ] && test="npx nx run-many -t test"
+  fi
+
+  printf '%s%s%s%s%s%s%s\n' "$lint" "$SEP" "$build" "$SEP" "$test" "$SEP" "$security"
+}
+
 detect_from_python() {
   local lint="unset"
   local build="unset"
@@ -188,7 +209,7 @@ build_cmd="unset"
 test_cmd="unset"
 security_cmd="unset"
 
-for detector in detect_from_make detect_from_node detect_from_node_workspaces detect_from_python detect_from_go detect_from_rust detect_harness_fallback; do
+for detector in detect_from_make detect_from_node detect_from_node_workspaces detect_from_monorepo_tools detect_from_python detect_from_go detect_from_rust detect_harness_fallback; do
   IFS="$SEP" read -r d_lint d_build d_test d_security <<< "$($detector)"
   lint_cmd="$(choose_first_non_unset "$lint_cmd" "$d_lint")"
   build_cmd="$(choose_first_non_unset "$build_cmd" "$d_build")"

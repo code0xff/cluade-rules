@@ -28,6 +28,7 @@ init_state_file() {
   "deferred_decisions": [],
   "assumptions": [],
   "manual_followups": [],
+  "qa_remediations": [],
   "history": []
 }
 EOF
@@ -70,6 +71,7 @@ jq '
   .deferred_decisions = (.deferred_decisions // [])
   | .assumptions = (.assumptions // [])
   | .manual_followups = (.manual_followups // [])
+  | .qa_remediations = (.qa_remediations // [])
 ' "$STATE_FILE" > "$tmp"
 mv "$tmp" "$STATE_FILE"
 
@@ -93,6 +95,7 @@ case "$ACTION" in
       | .deferred_decisions = []
       | .assumptions = []
       | .manual_followups = []
+      | .qa_remediations = []
       | .updated_at = $now
       | .history = [{"event":"start","stage":"plan","detail":"autopilot session started","at":$now}]
     '
@@ -135,6 +138,15 @@ case "$ACTION" in
     '
     append_event "defer" "$KIND" "$DETAIL"
     ;;
+  qa-remediation)
+    SLUG="${1:-}"
+    FILE_PATH="${2:-}"
+    NOW="$(timestamp_utc)"
+    update_state --arg slug "$SLUG" --arg file "$FILE_PATH" --arg now "$NOW" '
+      .qa_remediations += [{"slug": $slug, "file": $file, "at": $now}]
+    '
+    append_event "qa-remediation" "qa" "slug=${SLUG} file=${FILE_PATH}"
+    ;;
   fail)
     REASON="${1:-unknown}"
     update_state --arg reason "$REASON" '.status = "failed" | .error = $reason'
@@ -148,7 +160,7 @@ case "$ACTION" in
     cat "$STATE_FILE"
     ;;
   *)
-    echo "usage: $0 {start <goal>|cycle <n>|checkpoint <stage> [note]|gate <name> <pass|fail> [detail]|defer <deferred_decisions|assumptions|manual_followups> <detail>|fail <reason>|complete|show}" >&2
+    echo "usage: $0 {start <goal>|cycle <n>|checkpoint <stage> [note]|gate <name> <pass|fail> [detail]|defer <deferred_decisions|assumptions|manual_followups> <detail>|qa-remediation <slug> <file>|fail <reason>|complete|show}" >&2
     exit 2
     ;;
 esac

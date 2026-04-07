@@ -18,6 +18,9 @@
 - engine_runtime_mode: strict
 - allow_engine_stub: false
 - execute_engine_commands: true
+- intent_retry_attempts: 2
+- intent_timeout_seconds: 300
+- qa_max_reopen_attempts: 3
 
 ## Retry Policy
 

@@ -45,6 +45,8 @@ cleanup() {
   cp "$SESSION_BAK" .devharness/session.yaml
   rm -f .claude/state/autopilot-state.json
   rm -f .claude/state/qa-report.md
+  rm -f .claude/state/final-report.md
+  rm -f .claude/state/qa-registry.json
   rm -f ONBOARDING_READY.md
   rm -f docs/project-goal.md docs/scope.md docs/architecture.md docs/stack-decision.md docs/roadmap.md docs/execution-plan.md
   rm -rf docs/workstreams
@@ -106,6 +108,7 @@ run_expect_ok "autopilot state completed" sh -c \
   'test "$(jq -r ".status" .claude/state/autopilot-state.json)" = "completed"'
 run_expect_ok "autopilot followups recorded" sh -c \
   'test "$(jq ".manual_followups | length" .claude/state/autopilot-state.json)" -ge 1'
+run_expect_ok "final report generated" test -f .claude/state/final-report.md
 run_expect_ok "unset config report generated" .claude/hooks/report-unset-config.sh
 run_expect_ok "render onboarding docs" .claude/hooks/render-onboarding-docs.sh
 run_expect_ok "qa workstream registration" sh -c '
@@ -123,6 +126,20 @@ EOF
 .claude/hooks/register-qa-workstream.sh "ci-qa" >/dev/null &&
 test -d docs/workstreams &&
 test "$(find docs/workstreams -type f | wc -l | tr -d " ")" -ge 1'
+run_expect_fail "qa workstream registration capped" sh -c '
+cat > .claude/state/qa-report.md <<'"'"'EOF'"'"'
+# QA Report
+- status: fail
+- summary: repeat coverage gap
+## Requirement Coverage
+- some requirement is missing
+## Findings
+- [severity:medium] missing requirement coverage
+## Follow Up Workstreams
+- QA workstream: resolve missing requirement coverage
+EOF
+for _ in 1 2 3; do .claude/hooks/register-qa-workstream.sh "ci-qa" >/dev/null || true; done
+.claude/hooks/register-qa-workstream.sh "ci-qa" >/dev/null'
 run_expect_ok "project onboarding flow" .claude/hooks/run-project-onboarding.sh
 run_expect_ok "onboarding auto-starts autopilot when ready" sh -c '
 cat > .devharness/session.yaml <<'"'"'EOF'"'"'

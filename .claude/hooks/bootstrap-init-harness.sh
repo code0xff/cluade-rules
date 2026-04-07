@@ -226,6 +226,9 @@ set_automation_if_unset "auto_start_autopilot_on_ready" "true"
 set_automation_if_unset "auto_commit_on_success" "true"
 set_automation_if_unset "auto_push_on_success" "false"
 set_automation_if_unset "allow_auto_push" "false"
+set_automation_if_unset "intent_retry_attempts" "2"
+set_automation_if_unset "intent_timeout_seconds" "300"
+set_automation_if_unset "qa_max_reopen_attempts" "3"
 
 # 3) engine adapter 커맨드 자동 설정
 if command -v codex >/dev/null 2>&1; then

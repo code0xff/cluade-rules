@@ -24,6 +24,9 @@ required_keys=(
   "engine_runtime_mode"
   "allow_engine_stub"
   "execute_engine_commands"
+  "intent_retry_attempts"
+  "intent_timeout_seconds"
+  "qa_max_reopen_attempts"
   "max_fix_attempts_per_gate"
   "max_autopilot_cycles"
   "plan_cmd"
@@ -120,7 +123,7 @@ if [ "$enable_quality_gates" = "true" ] && [ "$quality_cmd" = "unset" ]; then
   exit 2
 fi
 
-for int_key in max_fix_attempts_per_gate max_autopilot_cycles; do
+for int_key in intent_retry_attempts intent_timeout_seconds qa_max_reopen_attempts max_fix_attempts_per_gate max_autopilot_cycles; do
   val=$(get_value "$int_key")
   if ! echo "$val" | grep -Eq '^[0-9]+$'; then
     echo "project-automation 검증 실패: ${int_key}는 정수여야 합니다." >&2
