@@ -1,14 +1,18 @@
 #!/bin/bash
 
-# check-codex-plugin.sh — codex 플러그인 가용성 확인
+# check-codex-plugin.sh — codex MCP server availability check
 #
-# 사용: check-codex-plugin.sh check
-# 출력: plugin | cli | none
+# Usage: check-codex-plugin.sh check
+# Output: plugin | cli | none
 #
-# 판정 순서:
-#   1. .mcp.json에 codex MCP 서버가 설정되어 있고 실행 커맨드가 가용하면 → plugin
-#   2. codex CLI가 설치되어 있으면 → cli
-#   3. 그 외 → none
+# Decision order:
+#   1. .mcp.json defines mcpServers.codex AND the MCP package is locally available → plugin
+#   2. codex CLI is installed → cli
+#   3. otherwise → none
+#
+# Plugin detection uses npx --no-install to verify the package is already
+# cached/installed, avoiding network calls and false positives when only
+# npx itself is present but the package is not installed.
 
 set -euo pipefail
 
@@ -16,17 +20,42 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 MCP_JSON="${REPO_ROOT}/.mcp.json"
 
-check_plugin() {
-  # .mcp.json에 codex MCP 서버가 설정되어 있는지 확인
-  if [ -f "$MCP_JSON" ] && command -v jq >/dev/null 2>&1; then
-    local server_cmd
-    server_cmd="$(jq -r '.mcpServers.codex.command // empty' "$MCP_JSON" 2>/dev/null || true)"
-    if [ -n "$server_cmd" ]; then
-      # 커맨드가 실행 가능한지 확인 (npx, node 등)
-      if command -v "$server_cmd" >/dev/null 2>&1; then
-        echo "plugin"
-        return
+# Check if the MCP server package is actually available (without downloading it)
+is_mcp_server_available() {
+  local cmd="$1"
+  local args_json="$2"
+
+  # For npx-based commands, extract the package name from args and verify
+  # it's already installed/cached using --no-install (no network required)
+  if [ "$cmd" = "npx" ] && command -v npx >/dev/null 2>&1; then
+    local pkg
+    pkg="$(echo "$args_json" | jq -r '[.[] | select(startswith("-") | not)] | first // empty' 2>/dev/null || true)"
+    if [ -n "$pkg" ]; then
+      # --no-install fails immediately if the package is not cached
+      if npx --no-install "$pkg" --version >/dev/null 2>&1; then
+        return 0
       fi
+    fi
+    return 1
+  fi
+
+  # For other commands, check if the binary exists and is executable
+  if command -v "$cmd" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  return 1
+}
+
+check_plugin() {
+  # Check .mcp.json for codex MCP server configuration
+  if [ -f "$MCP_JSON" ] && command -v jq >/dev/null 2>&1; then
+    local server_cmd args_json
+    server_cmd="$(jq -r '.mcpServers.codex.command // empty' "$MCP_JSON" 2>/dev/null || true)"
+    args_json="$(jq -c '.mcpServers.codex.args // []' "$MCP_JSON" 2>/dev/null || echo "[]")"
+    if [ -n "$server_cmd" ] && is_mcp_server_available "$server_cmd" "$args_json"; then
+      echo "plugin"
+      return
     fi
   fi
 

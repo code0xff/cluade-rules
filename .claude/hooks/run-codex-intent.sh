@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# run-codex-intent.sh — codex 엔진 어댑터
+# run-codex-intent.sh — codex engine adapter
 #
-# codex-plugin-cc가 있으면 Claude Code 세션 내에서 플러그인으로 실행 (컨텍스트 공유).
-# 없으면 codex CLI로 fallback (기존 방식).
+# Plugin mode: codex-mcp-server configured in .mcp.json and locally available.
+#   Runs via claude -p; prompts Claude to use codex MCP tools in-session.
+# CLI mode: codex CLI installed. Runs via codex exec.
+# None mode: neither available. Falls back to claude -p without codex tools.
 
 set -euo pipefail
 
