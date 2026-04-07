@@ -164,15 +164,15 @@ run_expect_ok "bootstrap project standalone install" sh -c \
 run_expect_ok "onboarding ready report exists" test -f ONBOARDING_READY.md
 run_expect_ok "onboarding docs generated" test -f docs/project-goal.md
 
-run_expect_ok "intent-context source" sh -c \
+run_expect_ok "intent-context source" bash -c \
   'source .claude/hooks/intent-context.sh && type find_latest_artifact >/dev/null 2>&1'
-run_expect_ok "intent-context find_latest_artifact returns path" sh -c '
+run_expect_ok "intent-context find_latest_artifact returns path" bash -c '
 source .claude/hooks/intent-context.sh
 art="$(find_latest_artifact "plan")"
 test -n "$art" && test -f "$art"'
-run_expect_ok "intent-context collect_file_tree" sh -c \
+run_expect_ok "intent-context collect_file_tree" bash -c \
   'source .claude/hooks/intent-context.sh && tree="$(collect_file_tree 2)" && test -n "$tree"'
-run_expect_ok "intent-context collect_project_docs includes generated docs" sh -c \
+run_expect_ok "intent-context collect_project_docs includes generated docs" bash -c \
   'source .claude/hooks/intent-context.sh && docs="$(collect_project_docs 50)" && echo "$docs" | grep -q "project-goal.md"'
 run_expect_ok "claude intent build includes plan artifact" sh -c '
 DEV_HARNESS_TEST_MODE=true .claude/hooks/run-engine-intent.sh plan "ctx-test" >/dev/null
