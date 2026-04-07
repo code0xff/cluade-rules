@@ -16,6 +16,9 @@
 
 구조적 결정은 architecture 문서가 기준이고, 구현 순서는 roadmap이 기준이며, 실행 엔진/모델은 project profile이 기준이고, 사전 승인 범위는 project approvals가 기준이며, 자동화 강도/게이트 명령은 project automation이 기준이고, 개발 방식은 rules가 기준이다. 해당 문서가 없는 프로젝트에서는 존재하는 하위 기준만 적용한다.
 
+- roadmap은 상위 실행 계획이고, workstream은 roadmap 안의 개별 실행 단위다.
+- 개별 workstream 문서가 있으면 roadmap의 순서와 범위를 따르되, 각 workstream의 상세 deliverable과 exit criteria는 해당 문서를 따른다.
+
 - 문서와 실제 구현이 불일치하는 경우 문서를 우선한다. 구현을 문서에 맞게 수정하거나, 의도적 변경이라면 문서를 먼저 갱신한 후 구현한다.
 
 ## When To Update Documents
@@ -42,6 +45,7 @@
 workstream 기반 개발을 하는 프로젝트에서 적용한다:
 
 - `/plan` 산출물은 roadmap에 정의된 모든 workstream의 목표, 의존성, 구현 순서, exit criteria를 포함해야 한다.
+- roadmap은 단일 문서일 수도 있고, 개별 workstream 문서 집합의 상위 인덱스일 수도 있다.
 - 현재 workstream에서 필요한 최소 인터페이스만 먼저 만든다.
 - 구현 전에 다음 workstream 기능을 미리 섞지 않는다.
 - 테스트 없이 핵심 계약이나 인터페이스를 추가하지 않는다.

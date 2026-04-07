@@ -33,6 +33,8 @@ rules/는 모든 작업에 항상 적용된다. 실행 엔진/모델은 `.claude
 
 ### workstream 기반 (기능 개발, 대규모 변경)
 
+`roadmap`은 전체 실행 순서와 범위를 정의하는 상위 계획이고, `workstream`은 그 roadmap 안의 개별 실행 단위다. 필요하면 roadmap 외에 각 단계별 workstream 문서를 따로 둘 수 있다.
+
 1. `/plan` (profile.plan_engine) — 설계 및 구현 계획 수립
 2. `/workstream` (profile.build_engine) — 계획 실행 (체크리스트 기반)
    - feature 단위마다 `/self-review` 실행

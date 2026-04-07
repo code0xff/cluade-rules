@@ -86,12 +86,14 @@ cp -r .devharness/ /path/to/your-project/.devharness/
 `/autopilot`의 첫 단계인 `/plan`은 roadmap의 모든 workstream을 먼저 설계하고, 이후 build 단계가 그 순서대로 구현을 이어간다.
 `/workstream`은 구현, 커밋, 코드 리뷰를 내부에서 순차 수행한다. 변경 크기에 따라 경량 리뷰(빌드+테스트만) 또는 전체 리뷰(`/codex-review` + `/self-review`)를 선택한다. 리뷰를 별도로 실행하려면 `/workstream` 없이 직접 호출한다.
 
+여기서 `roadmap`은 프로젝트 전체 순서와 범위를 정의하는 상위 계획이고, `workstream`은 그 roadmap을 구성하는 개별 실행 단위다. 작은 프로젝트는 `docs/roadmap.md` 하나로 충분하지만, 필요하면 `docs/workstreams/` 아래에 단계별 문서를 분리해도 된다.
+
 ## 프로젝트별 확장
 
 복사 후 프로젝트에 맞게 추가할 것:
 
 - `docs/architecture.md` — 프로젝트 아키텍처 문서
-- `docs/roadmap.md` — Workstream 단계별 목표와 deliverable
+- `docs/roadmap.md` — 전체 workstream 순서, 범위, 의존성을 정리하는 상위 계획 문서
 - `.claude/project-profile.md` — 프로젝트 엔진/모델 고정값
 - `.claude/project-approvals.md` — 프로젝트 사전 승인 범위
 - `.claude/project-automation.md` — 자동화 모드/재시도/게이트 정책

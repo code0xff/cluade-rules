@@ -8,6 +8,8 @@ user-invocable: true
 
 ## 0. /plan과의 관계
 
+- roadmap은 전체 순서와 범위를 정의하는 상위 계획이고, workstream은 그 roadmap 안의 개별 실행 단위다.
+- 필요하면 roadmap과 별도로 현재 단계의 상세 내용을 담는 workstream 문서를 둘 수 있다.
 - workstream 실행 전에 `/plan`으로 설계와 구현 계획을 먼저 수립하는 것을 권장한다.
 - `/plan`이 완료된 상태라면 그 계획을 기반으로 workstream을 실행한다.
 - `/plan` 없이 바로 `/workstream`을 실행해도 된다. 이 경우 시작 체크리스트에서 맥락을 파악한다.
