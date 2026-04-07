@@ -42,7 +42,7 @@ run_expect_fail_pipe() {
 cleanup() {
   cp "$AUTOMATION_BAK" .claude/project-automation.md
   cp "$APPROVALS_BAK" .claude/project-approvals.md
-  cp "$SESSION_BAK" .devharness/session.yaml
+  if [ -s "$SESSION_BAK" ]; then cp "$SESSION_BAK" .devharness/session.yaml; else rm -f .devharness/session.yaml; fi
   rm -f .claude/state/autopilot-state.json
   rm -f .claude/state/qa-report.md
   rm -f .claude/state/final-report.md
@@ -59,7 +59,7 @@ APPROVALS_BAK="$(mktemp)"
 SESSION_BAK="$(mktemp)"
 cp .claude/project-automation.md "$AUTOMATION_BAK"
 cp .claude/project-approvals.md "$APPROVALS_BAK"
-cp .devharness/session.yaml "$SESSION_BAK"
+[ -f .devharness/session.yaml ] && cp .devharness/session.yaml "$SESSION_BAK" || true
 trap cleanup EXIT
 
 run_expect_ok "hook syntax" sh -c 'find .claude/hooks -type f -name "*.sh" -print0 | xargs -0 -I{} bash -n "{}"'
