@@ -172,11 +172,20 @@ if [ "$execute_engine_commands" != "true" ]; then
   exit 0
 fi
 
+STATE_HOOK=".claude/hooks/autopilot-state.sh"
+
+record_artifact() {
+  if [ -x "$STATE_HOOK" ] && [ "${AUTOPILOT_ACTIVE:-false}" = "true" ]; then
+    "$STATE_HOOK" checkpoint "$INTENT" "artifact=${artifact}" >/dev/null 2>&1 || true
+  fi
+}
+
 if command -v "$binary" >/dev/null 2>&1; then
   attempt=1
   while [ "$attempt" -le "$retry_attempts" ]; do
     if run_with_timeout "$timeout_seconds" "$cmd" >> "$artifact" 2>&1; then
       validate_intent_artifact "$INTENT" "$artifact"
+      record_artifact
       exit 0
     fi
     if [ "$attempt" -lt "$retry_attempts" ]; then

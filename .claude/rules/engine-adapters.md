@@ -6,24 +6,48 @@
 - 각 intent는 활성 프로파일의 `*_engine`, `*_model`을 따른다.
 - 특정 도구 명령이 없어도 intent 결과물은 동일 형식이어야 한다.
 
+## Intent Context Chain
+
+각 intent는 이전 단계의 산출물을 프롬프트 컨텍스트로 받는다.
+컨텍스트 전달은 `intent-context.sh`가 담당하며, 엔진 어댑터(`run-claude-intent.sh`, `run-codex-intent.sh`)가 이를 source하여 사용한다.
+
+- `plan`: 프로젝트 문서(`docs/*.md`), 파일 트리, 코드베이스 구조
+- `build`: plan의 모든 컨텍스트 + 최신 plan artifact(`## Implementation Plan` 포함)
+- `review`: plan+build의 모든 컨텍스트 + 최신 build artifact + git 변경 내역
+
+산출물은 `.claude/state/intents/{intent}-{timestamp}-{random}.md`에 저장되며, 다음 단계에서 `find_latest_artifact()`로 최신 파일을 탐색한다.
+
+## Step-based Build Execution
+
+`run-build-steps.sh`는 plan artifact의 `## Implementation Plan` 섹션에서 번호매긴 단계(`1. ...`, `2. ...`)를 파싱하여 각 step을 독립적인 build intent로 실행한다.
+
+- 각 step 완료 후 `build_cmd`/`test_cmd` gate를 검증한다.
+- gate 실패 시 에러 메시지를 포함하여 같은 step을 `max_fix_attempts_per_gate`회까지 재시도한다.
+- 실패한 step은 `deferred_decisions`로 기록하고, 나머지 step은 best-effort로 계속 진행한다.
+- 모든 step 완료 후 통합 build artifact를 생성한다.
+- step 파싱이 불가능하면 기존 단일 build(`run-engine-intent.sh build`)로 fallback한다.
+
 ## Intent Output Contract
 
 ### Plan
 
-- 입력: 사용자 요구사항, architecture/roadmap/rules
+- 입력: 사용자 요구사항, 프로젝트 문서, 파일 트리
 - 출력: 목표/제약, 구현 단계, 위험 요소, 검증 계획
+- 필수 헤딩: `## Goal And Constraints`, `## Approach`, `## Implementation Plan`, `## Uncertainties`
 - 완료 조건: 실행 가능한 단계별 계획이 확정됨
 
 ### Build
 
-- 입력: plan 산출물
+- 입력: plan 산출물(Implementation Plan 포함), 프로젝트 문서, 파일 트리
 - 출력: 코드 변경, 테스트 결과, 문서 갱신
+- 필수 헤딩: `## Build Changes`, `## Validation Results`, `## Updated Files`
 - 완료 조건: plan 범위 구현 + 빌드/테스트 통과
 
 ### Review
 
-- 입력: 최종 코드와 변경 내역
+- 입력: plan 산출물, build 산출물, git 변경 내역
 - 출력: 이슈 목록(심각도/근거), 즉시 반영 항목, 사용자 판단 항목
+- 필수 헤딩: `## Findings`, `## Applied Fixes`, `## User Follow Ups`
 - 완료 조건: required gate 충족 + 미해결 치명 이슈 0
 
 ## Example Adapter Mapping

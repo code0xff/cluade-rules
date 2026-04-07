@@ -2,9 +2,15 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=intent-context.sh
+source "${SCRIPT_DIR}/intent-context.sh"
+
 PROFILE_FILE=".claude/project-profile.md"
 AUTOMATION_FILE=".claude/project-automation.md"
 REPORT_FILE=".claude/state/qa-report.md"
+DONE_CHECK_FILE=".claude/state/done-check-report.txt"
+STATE_FILE=".claude/state/autopilot-state.json"
 GOAL="${1:-autopilot-goal}"
 
 get_profile_value() {
@@ -29,24 +35,108 @@ validate_report() {
 }
 
 build_prompt() {
+  local project_docs file_tree recent_changes plan_body build_body review_body
+  local plan_artifact build_artifact review_artifact
+
+  # 프로젝트 문서 수집
+  project_docs="$(collect_project_docs 200)"
+
+  # 파일 트리 수집
+  file_tree="$(collect_file_tree 3)"
+
+  # 최근 변경 수집
+  recent_changes="$(collect_recent_changes)"
+
+  # 이전 intent 산출물 수집
+  plan_artifact="$(find_latest_artifact "plan")"
+  plan_body="$(read_artifact_body "$plan_artifact")"
+  build_artifact="$(find_latest_artifact "build")"
+  build_body="$(read_artifact_body "$build_artifact")"
+  review_artifact="$(find_latest_artifact "review")"
+  review_body="$(read_artifact_body "$review_artifact")"
+
   cat <<EOF
 You are performing QA against the project's initial requirements.
-Inspect the repository and at least these files when present:
-- docs/project-goal.md
-- docs/scope.md
-- docs/roadmap.md
-- docs/execution-plan.md
-- .claude/state/done-check-report.txt
-- .claude/state/autopilot-state.json
+Your job is to verify that the implementation matches the original goals.
 
 Goal: ${GOAL}
+
+## Project File Tree
+\`\`\`
+${file_tree}
+\`\`\`
+EOF
+
+  if [ -n "$project_docs" ]; then
+    cat <<EOF
+
+## Project Documents
+${project_docs}
+EOF
+  fi
+
+  if [ -f "$STATE_FILE" ]; then
+    cat <<EOF
+
+## Autopilot State
+\`\`\`json
+$(cat "$STATE_FILE")
+\`\`\`
+EOF
+  fi
+
+  if [ -f "$DONE_CHECK_FILE" ]; then
+    cat <<EOF
+
+## Done Check Report
+$(cat "$DONE_CHECK_FILE")
+EOF
+  fi
+
+  if [ -n "$plan_body" ]; then
+    cat <<EOF
+
+## Plan Stage Output
+${plan_body}
+EOF
+  fi
+
+  if [ -n "$build_body" ]; then
+    cat <<EOF
+
+## Build Stage Output
+${build_body}
+EOF
+  fi
+
+  if [ -n "$review_body" ]; then
+    cat <<EOF
+
+## Review Stage Output
+${review_body}
+EOF
+  fi
+
+  if [ -n "$recent_changes" ]; then
+    cat <<EOF
+
+## Recent Changes
+${recent_changes}
+EOF
+  fi
+
+  cat <<EOF
+
+---
+
+Based on ALL the context above, evaluate whether the implementation satisfies the original goal and requirements.
 
 Return markdown only and include these exact headings:
 # QA Report
 - status: pass|fail
 - summary: short summary
 ## Requirement Coverage
-- bullet list of requirement coverage
+- bullet list mapping each requirement to its implementation status
 ## Findings
 - use '- none' if there are no QA issues
 - otherwise each finding must start with '- [severity:<low|medium|high>]'

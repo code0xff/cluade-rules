@@ -10,6 +10,7 @@
 
 - validate는 `project-automation.md`의 gate 명령을 따른다.
 - plan/implement/review는 `project-automation.md`의 `plan_cmd`, `implement_cmd`, `review_cmd`를 따른다.
+- implement 단계는 기본적으로 `run-build-steps.sh`가 plan의 Implementation Plan을 step 단위로 분할 실행한다. 각 step 완료 후 build/test gate를 검증하고, 실패 시 에러 컨텍스트를 포함하여 재시도한다. step 파싱이 불가능하면 단일 build로 fallback한다.
 - full-auto 모드에서는 `/plan`이 roadmap 전체 workstream 설계를 먼저 확정하고, implement 단계는 그 순서를 따라 연속 실행한다.
 - stage 명령이 `unset`이면 `run-engine-intent.sh`로 profile 기반 엔진 어댑터를 실행한다.
 - strict runtime에서는 `check-engine-readiness.sh`를 통과해야 시작할 수 있다.

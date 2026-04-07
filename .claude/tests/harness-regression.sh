@@ -164,4 +164,54 @@ run_expect_ok "bootstrap project standalone install" sh -c \
 run_expect_ok "onboarding ready report exists" test -f ONBOARDING_READY.md
 run_expect_ok "onboarding docs generated" test -f docs/project-goal.md
 
+run_expect_ok "intent-context source" sh -c \
+  'source .claude/hooks/intent-context.sh && type find_latest_artifact >/dev/null 2>&1'
+run_expect_ok "intent-context find_latest_artifact returns path" sh -c '
+source .claude/hooks/intent-context.sh
+art="$(find_latest_artifact "plan")"
+test -n "$art" && test -f "$art"'
+run_expect_ok "intent-context collect_file_tree" sh -c \
+  'source .claude/hooks/intent-context.sh && tree="$(collect_file_tree 2)" && test -n "$tree"'
+run_expect_ok "intent-context collect_project_docs includes generated docs" sh -c \
+  'source .claude/hooks/intent-context.sh && docs="$(collect_project_docs 50)" && echo "$docs" | grep -q "project-goal.md"'
+run_expect_ok "claude intent build includes plan artifact" sh -c '
+DEV_HARNESS_TEST_MODE=true .claude/hooks/run-engine-intent.sh plan "ctx-test" >/dev/null
+out="$(DEV_HARNESS_TEST_MODE=true .claude/hooks/run-claude-intent.sh build "ctx-test")"
+echo "$out" | grep -q "Build Changes"'
+run_expect_ok "codex intent review includes build artifact" sh -c '
+DEV_HARNESS_TEST_MODE=true .claude/hooks/run-engine-intent.sh plan "ctx-test2" >/dev/null
+DEV_HARNESS_TEST_MODE=true .claude/hooks/run-engine-intent.sh build "ctx-test2" >/dev/null
+out="$(DEV_HARNESS_TEST_MODE=true .claude/hooks/run-codex-intent.sh review "ctx-test2")"
+echo "$out" | grep -q "Findings"'
+run_expect_ok "build-steps parses plan and runs steps" sh -c '
+mkdir -p .claude/state/intents
+cat > .claude/state/intents/plan-9999999999-99999.md <<'"'"'PLAN'"'"'
+# Engine Intent Artifact
+
+- intent: plan
+- engine: codex
+- goal: step-test
+
+## Goal And Constraints
+- test goal
+## Approach
+- step approach
+## Implementation Plan
+1. Create the module skeleton
+2. Add unit tests
+3. Wire up the entry point
+## Uncertainties
+- none
+PLAN
+out="$(DEV_HARNESS_TEST_MODE=true .claude/hooks/run-build-steps.sh "step-test" 2>&1)"
+echo "$out" | grep -q "step 1" &&
+echo "$out" | grep -q "step 2" &&
+echo "$out" | grep -q "step 3" &&
+echo "$out" | grep -q "all 3 steps passed"
+rm -f .claude/state/intents/plan-9999999999-99999.md'
+run_expect_ok "build-steps fallback on no steps" sh -c '
+DEV_HARNESS_TEST_MODE=true .claude/hooks/run-engine-intent.sh plan "no-steps-test" >/dev/null
+out="$(DEV_HARNESS_TEST_MODE=true .claude/hooks/run-build-steps.sh "no-steps-test" 2>&1)"
+echo "$out" | grep -q "Build Changes"'
+
 pass "all harness regression checks"
