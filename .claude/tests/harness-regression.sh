@@ -68,6 +68,47 @@ run_expect_ok "project profile validation" .claude/hooks/validate-project-profil
 run_expect_ok "project approvals validation" .claude/hooks/validate-project-approvals.sh
 run_expect_ok "project automation validation" .claude/hooks/validate-project-automation.sh
 run_expect_ok "completion contract validation" .claude/hooks/validate-completion-contract.sh
+run_expect_ok "completion contract validation system-platform with required keys" sh -c '
+tmpcontract="$(mktemp)"
+tmpsession="$(mktemp)"
+cat > "$tmpcontract" <<'"'"'EOF'"'"'
+# Completion Contract
+## Contract
+- done_enforcement: report
+- artifact_definition: interface contract validated
+- artifact_check_cmd: echo ok
+- run_smoke_cmd: echo ok
+- acceptance_test_cmd: echo ok
+- release_readiness_cmd: echo ok
+## System Platform Checks
+- interface_contract_check: validated
+- compatibility_check: checked
+- failure_mode_check: reviewed
+- operability_check: confirmed
+EOF
+printf "project_archetype: system-platform\n" > "$tmpsession"
+result=0
+CONTRACT_FILE="$tmpcontract" SESSION_FILE="$tmpsession" .claude/hooks/validate-completion-contract.sh >/dev/null 2>&1 || result=$?
+rm -f "$tmpcontract" "$tmpsession"
+exit $result'
+run_expect_fail "completion contract validation system-platform missing keys" sh -c '
+tmpcontract="$(mktemp)"
+tmpsession="$(mktemp)"
+cat > "$tmpcontract" <<'"'"'EOF'"'"'
+# Completion Contract
+## Contract
+- done_enforcement: report
+- artifact_definition: interface contract validated
+- artifact_check_cmd: echo ok
+- run_smoke_cmd: echo ok
+- acceptance_test_cmd: echo ok
+- release_readiness_cmd: echo ok
+EOF
+printf "project_archetype: system-platform\n" > "$tmpsession"
+result=0
+CONTRACT_FILE="$tmpcontract" SESSION_FILE="$tmpsession" .claude/hooks/validate-completion-contract.sh >/dev/null 2>&1 || result=$?
+rm -f "$tmpcontract" "$tmpsession"
+exit $result'
 run_expect_ok "init bootstrap" .claude/hooks/bootstrap-init-harness.sh
 run_expect_ok "project approvals validation after bootstrap" .claude/hooks/validate-project-approvals.sh
 run_expect_ok "project automation validation after bootstrap" .claude/hooks/validate-project-automation.sh
@@ -111,6 +152,44 @@ run_expect_ok "autopilot followups recorded" sh -c \
 run_expect_ok "final report generated" test -f .claude/state/final-report.md
 run_expect_ok "unset config report generated" .claude/hooks/report-unset-config.sh
 run_expect_ok "render onboarding docs" .claude/hooks/render-onboarding-docs.sh
+run_expect_ok "render onboarding docs system-platform" sh -c '
+cat > .devharness/session.yaml <<'"'"'EOF'"'"'
+schema_version: 1
+status: proposed
+project_goal: build a distributed queue
+target_users: internal platform team
+core_features: high-throughput messaging
+constraints: backward compatibility required
+project_archetype: system-platform
+stack_candidate_1: kafka
+stack_candidate_2: rabbitmq
+stack_candidate_3: nats
+selected_stack: kafka
+open_questions: unset
+decisions: unset
+EOF
+result=0
+.claude/hooks/render-onboarding-docs.sh >/dev/null &&
+grep -q "System Boundary" docs/architecture.md &&
+grep -q "Interface And Protocol Contract" docs/architecture.md &&
+grep -q "Failure Mode And Recovery" docs/architecture.md &&
+grep -q "interface contracts" docs/roadmap.md || result=1
+cat > .devharness/session.yaml <<'"'"'RESET'"'"'
+schema_version: 1
+status: proposed
+project_goal: unset
+target_users: unset
+core_features: unset
+constraints: unset
+project_archetype: unset
+stack_candidate_1: unset
+stack_candidate_2: unset
+stack_candidate_3: unset
+selected_stack: unset
+open_questions: unset
+decisions: unset
+RESET
+exit $result'
 run_expect_ok "qa workstream registration" sh -c '
 cat > .claude/state/qa-report.md <<'"'"'EOF'"'"'
 # QA Report
@@ -147,8 +226,9 @@ schema_version: 1
 status: proposed
 project_goal: ci regression goal
 target_users: internal developers
-core_features: unset
+core_features: auth and dashboard
 constraints: unset
+project_archetype: service-app
 stack_candidate_1: unset
 stack_candidate_2: unset
 stack_candidate_3: unset

@@ -69,14 +69,16 @@ set_status() {
 }
 
 is_ready_for_execution() {
-  local goal users archetype stack
+  local goal users features archetype stack
   goal="$(get_value project_goal)"
   users="$(get_value target_users)"
+  features="$(get_value core_features)"
   archetype="$(get_value project_archetype)"
   stack="$(get_value selected_stack)"
 
   if [ -z "$goal" ] || [ "$goal" = "unset" ] || \
      [ -z "$users" ] || [ "$users" = "unset" ] || \
+     [ -z "$features" ] || [ "$features" = "unset" ] || \
      [ -z "$archetype" ] || [ "$archetype" = "unset" ] || \
      [ -z "$stack" ] || [ "$stack" = "unset" ]; then
     return 1
@@ -204,7 +206,7 @@ render_ready_report() {
 EOF2
 
   if [ "$status" = "pending-input" ]; then
-    echo "run-project-onboarding 경고: session.yaml에 미확정 값이 있습니다 (project_goal/target_users/project_archetype/selected_stack)."
+    echo "run-project-onboarding 경고: session.yaml에 미확정 값이 있습니다 (project_goal/target_users/core_features/project_archetype/selected_stack)."
   fi
 }
 

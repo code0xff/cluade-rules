@@ -23,6 +23,7 @@ STATE_DIR=".claude/state/intents"
 BUILD_LOG=".claude/state/build-steps.log"
 
 GOAL="${1:-autopilot-goal}"
+STEP_PROGRESS_FILE=".claude/state/build-steps-progress.json"
 
 get_profile_value() {
   local key="$1"
@@ -37,6 +38,36 @@ get_automation_value() {
 log_step() {
   local msg="$1"
   printf '%s %s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$msg" >> "$BUILD_LOG"
+}
+
+# 이전 실행에서 완료된 step 번호 목록을 반환한다 (goal이 동일할 때만)
+get_completed_steps() {
+  if [ -f "$STEP_PROGRESS_FILE" ] && command -v jq >/dev/null 2>&1; then
+    local stored_goal
+    stored_goal="$(jq -r '.goal // ""' "$STEP_PROGRESS_FILE" 2>/dev/null || true)"
+    if [ "$stored_goal" = "$GOAL" ]; then
+      jq -r '.completed_steps // [] | .[]' "$STEP_PROGRESS_FILE" 2>/dev/null || true
+      return
+    fi
+  fi
+  echo ""
+}
+
+# 완료된 step 번호를 progress 파일에 기록한다
+record_completed_step() {
+  local step_num="$1"
+  command -v jq >/dev/null 2>&1 || return 0
+  local existing="[]"
+  if [ -f "$STEP_PROGRESS_FILE" ]; then
+    existing="$(jq '.completed_steps // []' "$STEP_PROGRESS_FILE" 2>/dev/null || echo "[]")"
+  fi
+  jq -n --arg goal "$GOAL" --argjson steps "$existing" --argjson step "$step_num" \
+    '{goal: $goal, completed_steps: ($steps + [$step])}' > "$STEP_PROGRESS_FILE"
+}
+
+# step progress 파일을 삭제한다
+clear_step_progress() {
+  rm -f "$STEP_PROGRESS_FILE"
 }
 
 # plan artifact에서 Implementation Plan 섹션의 번호매긴 단계들을 추출
@@ -150,6 +181,9 @@ mkdir -p "$(dirname "$BUILD_LOG")"
 mkdir -p "$STATE_DIR"
 : > "$BUILD_LOG"
 
+# 오래된 intent artifact 정리 (intent 유형별 최신 20개 유지)
+cleanup_old_artifacts 20
+
 max_fix="$(get_automation_value max_fix_attempts_per_gate)"
 [ -z "$max_fix" ] && max_fix="3"
 
@@ -179,11 +213,25 @@ current_step=0
 all_outputs=""
 failed_steps=""
 
+# 이전 실행에서 완료된 step 목록 (resume 지원)
+completed_steps_list="$(get_completed_steps)"
+
 while IFS= read -r step_line; do
   current_step=$((current_step + 1))
 
   # "1. description" → "description"
   step_desc="$(echo "$step_line" | sed -E 's/^[0-9]+\.[[:space:]]*//')"
+
+  # 이미 완료된 step은 건너뜀 (resume)
+  if echo "$completed_steps_list" | grep -qx "$current_step" 2>/dev/null; then
+    log_step "step ${current_step}/${step_count}: skipped (already completed in previous run)"
+    all_outputs="${all_outputs}
+
+### Step ${current_step}: ${step_desc}
+- skipped (resumed from previous run)"
+    continue
+  fi
+
   log_step "step ${current_step}/${step_count}: ${step_desc}"
 
   if [ -x "$STATE_HOOK" ] && [ "${AUTOPILOT_ACTIVE:-false}" = "true" ]; then
@@ -210,6 +258,7 @@ while IFS= read -r step_line; do
 
 ### Step ${current_step}: ${step_desc}
 ${step_output}"
+        record_completed_step "$current_step"
         log_step "step ${current_step} ok (attempt ${attempt})"
         break
       else
@@ -278,5 +327,8 @@ if [ -n "$failed_steps" ]; then
   echo "run-build-steps 경고: 일부 step이 실패했습니다.${failed_steps}" >&2
   exit 1
 fi
+
+# 모든 step 성공 시 progress 파일 정리
+clear_step_progress
 
 exit 0

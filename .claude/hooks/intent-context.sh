@@ -42,9 +42,10 @@ collect_project_docs() {
   local doc_files=(
     "docs/project-goal.md"
     "docs/scope.md"
+    "docs/architecture.md"
+    "docs/stack-decision.md"
     "docs/roadmap.md"
     "docs/execution-plan.md"
-    "docs/architecture.md"
   )
 
   for f in "${doc_files[@]}"; do
@@ -82,6 +83,20 @@ collect_recent_changes() {
     echo "=== Recent Commits ==="
     git log --oneline -10 2>/dev/null || true
   fi
+}
+
+# intent artifact를 intent 유형별로 최신 N개만 남기고 정리한다.
+cleanup_old_artifacts() {
+  local keep="${1:-20}"
+  [ -d "$INTENT_DIR" ] || return 0
+  local intent_type
+  for intent_type in plan build review; do
+    local old_files
+    old_files="$(ls -t "${INTENT_DIR}/${intent_type}"-*.md 2>/dev/null | tail -n "+$((keep + 1))" || true)"
+    if [ -n "$old_files" ]; then
+      echo "$old_files" | xargs rm -f
+    fi
+  done
 }
 
 # build step 로그를 반환한다.
