@@ -206,7 +206,7 @@ render_ready_report() {
 
 ## Next Action
 
-- If status is ready, autopilot starts automatically and plans all roadmap workstreams before building them in order.
+- If status is ready, run a quick docs sanity pass for docs/architecture.md and docs/roadmap.md, then continue directly into autopilot without asking for next-action selection.
 - If status is pending-input, fill project_goal, target_users, project_archetype, and selected_stack first.
 EOF2
 

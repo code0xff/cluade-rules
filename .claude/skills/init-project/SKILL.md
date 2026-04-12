@@ -38,6 +38,8 @@ user-invocable: true
 ```bash
 .claude/hooks/run-project-onboarding.sh
 ```
+9. `status=ready`이면 `docs/architecture.md`, `docs/roadmap.md`를 빠르게 검토해 `unset/TBD` 같은 미확정 placeholder가 남아 있는지 확인하고 즉시 보완한다.
+10. `status=ready`이고 `allow_midway_user_prompt=false`이면 다음 액션 선택을 사용자에게 묻지 않는다. 권장 경로를 자동 적용해 곧바로 `/autopilot` 실행으로 이어간다.
 
 ## 산출물
 
@@ -54,4 +56,5 @@ user-invocable: true
 - `ONBOARDING_READY.md`가 생성된다.
 - `status`가 `ready` 또는 `proposed`로 갱신된다.
 - `status=ready`이고 `auto_start_autopilot_on_ready=true`면 autopilot이 자동으로 시작된다.
+- `status=ready`이고 `allow_midway_user_prompt=false`면 "다음 액션 선택" 질문 없이 문서 빠른 검토 후 autopilot로 자동 진입한다.
 - 미확정 항목이 남으면 사용자에게 어떤 값을 확정해야 하는지 명확히 안내한다.
