@@ -43,7 +43,10 @@
       "Write(.nightwalker/session.yaml)",
       "Write(.nightwalker/session.yml)",
       "Write(session.yaml)",
-      "Write(session.yml)"
+      "Write(session.yml)",
+      "Write(docs/*.md)",
+      "Edit(docs/*.md)",
+      "MultiEdit(docs/*.md)"
     ]
   },
   "hooks": {
