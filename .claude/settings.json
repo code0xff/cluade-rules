@@ -32,21 +32,9 @@
       "Bash(.claude/hooks/*)",
       "Bash(.claude/tests/*)",
       "Bash(.github/*)",
-      "Edit(.nightwalker/session.yaml)",
-      "Edit(.nightwalker/session.yml)",
-      "Edit(session.yaml)",
-      "Edit(session.yml)",
-      "MultiEdit(.nightwalker/session.yaml)",
-      "MultiEdit(.nightwalker/session.yml)",
-      "MultiEdit(session.yaml)",
-      "MultiEdit(session.yml)",
-      "Write(.nightwalker/session.yaml)",
-      "Write(.nightwalker/session.yml)",
-      "Write(session.yaml)",
-      "Write(session.yml)",
-      "Write(docs/*.md)",
-      "Edit(docs/*.md)",
-      "MultiEdit(docs/*.md)"
+      "Write(**)",
+      "Edit(**)",
+      "MultiEdit(**)"
     ]
   },
   "hooks": {
