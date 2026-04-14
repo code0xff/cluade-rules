@@ -31,9 +31,21 @@ rules/는 모든 작업에 항상 적용된다. 실행 엔진/모델은 `.claude
 
 활성 프로파일에서 required인 게이트(`plan_gate`, `review_gate`)가 누락되면 작업을 완료로 보고하지 않는다.
 
+### iteration 루프 (기본 개발 사이클)
+
+개발은 iteration 단위로 반복된다. 각 iteration은 완료 시 서비스 수준의 완결성을 달성해야 한다.
+
+```
+/init-project → /autopilot → delivery → /next-iteration → /autopilot → delivery → ...
+```
+
+- `roadmap`은 `## Iteration N` 블록으로 구성된다. 각 블록은 `service_goal`, `acceptance`, `status`를 가지며, 하위 `### Workstream N` 항목들이 실행 단위다.
+- iteration이 delivered 상태가 되면 `/next-iteration`으로 다음 iteration을 정의한다.
+- roadmap 상태 관리는 `.claude/hooks/roadmap-state.sh`를 사용한다.
+
 ### workstream 기반 (기능 개발, 대규모 변경)
 
-`roadmap`은 전체 실행 순서와 범위를 정의하는 상위 계획이고, `workstream`은 그 roadmap 안의 개별 실행 단위다. 필요하면 roadmap 외에 각 단계별 workstream 문서를 따로 둘 수 있다.
+`roadmap`은 iteration과 workstream으로 구성된 상위 계획이고, `workstream`은 각 iteration 안의 개별 실행 단위다.
 
 1. `/plan` (profile.plan_engine) — 설계 및 구현 계획 수립
 2. `/workstream` (profile.build_engine) — 계획 실행 (체크리스트 기반)
