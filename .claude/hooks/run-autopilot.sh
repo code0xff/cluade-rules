@@ -381,6 +381,40 @@ run_delivery_stage() {
     fi
   fi
 
+  # iteration delivered 기록
+  local roadmap_hook
+  roadmap_hook="$(dirname "$STATE_HOOK")/roadmap-state.sh"
+  local session_hook
+  session_hook="$(dirname "$STATE_HOOK")/nightwalker-session.sh"
+
+  if [ -f "$roadmap_hook" ] && [ -f "$session_hook" ]; then
+    # shellcheck source=nightwalker-session.sh
+    source "$session_hook"
+    local session_file
+    session_file="$(nightwalker_resolve_session_file)"
+
+    if [ -f "$session_file" ]; then
+      local cur_iter
+      cur_iter="$(grep -E "^current_iteration:" "$session_file" | head -n1 | sed -E 's/^current_iteration:[[:space:]]*//' || echo "1")"
+
+      # roadmap에서 현재 iteration을 done으로 표시
+      # shellcheck source=roadmap-state.sh
+      source "$roadmap_hook"
+      mark_iteration_done "${cur_iter:-1}" 2>/dev/null || true
+
+      # session.yaml 갱신
+      local today
+      today="$(date -u +%Y-%m-%d)"
+      awk -v today="$today" '
+        /^iteration_status:/ { print "iteration_status: delivered"; next }
+        /^last_delivered_at:/ { print "last_delivered_at: " today; next }
+        { print }
+      ' "$session_file" > "${session_file}.tmp" && mv "${session_file}.tmp" "$session_file"
+
+      "$STATE_HOOK" checkpoint "delivery" "iteration ${cur_iter:-1} delivered" >/dev/null 2>&1 || true
+    fi
+  fi
+
   if [ "$allow_auto_push" = "true" ] && [ "$auto_push" = "true" ]; then
     if has_upstream_branch; then
       "$STATE_HOOK" checkpoint "delivery" "git push"
