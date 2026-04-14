@@ -3,3 +3,4 @@ docs/
 .nightwalker/session.yaml
 .devharness/session.yaml
 .omc/
+state/
