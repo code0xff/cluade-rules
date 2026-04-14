@@ -38,10 +38,19 @@ stack_candidates_raw="$(get_value stack_candidates)"
 recommended_stack="$(normalize_value "$(get_value recommended_stack)")"
 selected_stack="$(normalize_value "$(get_value selected_stack)")"
 
-# 쉼표 구분 후보 목록을 번호 목록으로 변환
+# 파이프(|) 또는 쉼표(,) 구분 후보 목록을 번호 목록으로 변환
+# 파이프를 우선 구분자로 사용한다(스택 이름 내 쉼표 포함 가능).
 # 구 포맷(stack_candidate_1/2/3) fallback 지원
+_split_candidates() {
+  local raw="$1"
+  if echo "$raw" | grep -qF '|'; then
+    echo "$raw" | tr '|' '\n'
+  else
+    echo "$raw" | tr ',' '\n'
+  fi
+}
 if [ -n "$stack_candidates_raw" ] && [ "$stack_candidates_raw" != "unset" ]; then
-  candidate_list="$(echo "$stack_candidates_raw" | tr ',' '\n' | \
+  candidate_list="$(_split_candidates "$stack_candidates_raw" | \
     sed 's/^ *//;s/ *$//' | awk 'NF{print NR". "$0}')"
 else
   c1="$(get_value stack_candidate_1)"
