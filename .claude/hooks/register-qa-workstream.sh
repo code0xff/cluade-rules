@@ -106,11 +106,7 @@ if [ -f "$SESSION_HOOK" ]; then
   source "$SESSION_HOOK"
   session_file="$(nightwalker_resolve_session_file 2>/dev/null || true)"
   if [ -f "$session_file" ]; then
-    cur_incr="$(grep -E "^current_increment:" "$session_file" | head -n1 | \
-      sed -E 's/^current_increment:[[:space:]]*//' || \
-      grep -E "^current_iteration:" "$session_file" | head -n1 | \
-      sed -E 's/^current_iteration:[[:space:]]*//' || echo "1")"
-    cur_incr="${cur_incr:-1}"
+    cur_incr="$(nightwalker_read_current_increment "$session_file")"
   fi
 fi
 

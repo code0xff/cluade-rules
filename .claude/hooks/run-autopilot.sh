@@ -124,11 +124,7 @@ _align_increment_status() {
   session_file="$(nightwalker_resolve_session_file 2>/dev/null || true)"
   [ -f "$session_file" ] || return 0
 
-  cur_incr="$(grep -E "^current_increment:" "$session_file" | head -n1 | \
-    sed -E 's/^current_increment:[[:space:]]*//' || \
-    grep -E "^current_iteration:" "$session_file" | head -n1 | \
-    sed -E 's/^current_iteration:[[:space:]]*//' || echo "1")"
-  cur_incr="${cur_incr:-1}"
+  cur_incr="$(nightwalker_read_current_increment "$session_file")"
 
   # roadmap에서 pending increment를 active로 승격
   # shellcheck source=roadmap-state.sh
@@ -417,11 +413,7 @@ run_delivery_stage() {
 
     if [ -f "$session_file" ]; then
       local cur_incr
-      # current_increment 우선, 없으면 current_iteration fallback
-      cur_incr="$(grep -E "^current_increment:" "$session_file" | head -n1 | \
-        sed -E 's/^current_increment:[[:space:]]*//' || \
-        grep -E "^current_iteration:" "$session_file" | head -n1 | \
-        sed -E 's/^current_iteration:[[:space:]]*//' || echo "1")"
+      cur_incr="$(nightwalker_read_current_increment "$session_file")"
 
       # roadmap에서 현재 increment를 done으로 표시
       # shellcheck source=roadmap-state.sh

@@ -56,3 +56,23 @@ nightwalker_ensure_session_storage() {
 nightwalker_is_test_mode() {
   [ "${NIGHTWALKER_TEST_MODE:-${DEV_HARNESS_TEST_MODE:-false}}" = "true" ]
 }
+
+# session.yaml에서 현재 increment 번호를 읽는다.
+# current_increment 키를 우선 읽고, 없으면 current_iteration(구 포맷)으로 fallback한다.
+# grep|head|sed 파이프라인은 grep이 미매치여도 exit 0을 반환하므로
+# 각 키를 독립된 명령으로 분리하여 빈 값 여부를 명시적으로 확인한다.
+nightwalker_read_current_increment() {
+  local session_file="${1:-}"
+  local val
+  if [ ! -f "$session_file" ]; then
+    echo "1"
+    return
+  fi
+  val="$(grep -E "^current_increment:" "$session_file" | head -n1 | \
+    sed -E 's/^current_increment:[[:space:]]*//')"
+  if [ -z "$val" ]; then
+    val="$(grep -E "^current_iteration:" "$session_file" | head -n1 | \
+      sed -E 's/^current_iteration:[[:space:]]*//')"
+  fi
+  echo "${val:-1}"
+}

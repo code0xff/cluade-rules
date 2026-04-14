@@ -133,11 +133,13 @@ _set_increment_status() {
     /^## Increment [0-9]/ || /^## Iteration [0-9]/ {
       cur = $3 + 0
       in_iter = (cur == n)
+      in_ws = 0
       print
       next
     }
-    /^## / { in_iter = 0; print; next }
-    in_iter && /^- status:/ {
+    /^## / { in_iter = 0; in_ws = 0; print; next }
+    /^### / { if (in_iter) in_ws = 1; print; next }
+    in_iter && !in_ws && /^- status:/ {
       print "- status: " new_status
       next
     }
