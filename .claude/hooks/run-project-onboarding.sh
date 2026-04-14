@@ -40,9 +40,8 @@ target_users: unset
 core_features: unset
 constraints: unset
 project_archetype: unset
-stack_candidate_1: unset
-stack_candidate_2: unset
-stack_candidate_3: unset
+stack_candidates: unset
+recommended_stack: unset
 selected_stack: unset
 open_questions: unset
 decisions: unset

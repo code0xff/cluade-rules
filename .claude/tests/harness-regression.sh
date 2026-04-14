@@ -217,9 +217,8 @@ target_users: internal developers
 core_features: auth and dashboard
 constraints: unset
 project_archetype: service-app
-stack_candidate_1: unset
-stack_candidate_2: unset
-stack_candidate_3: unset
+stack_candidates: unset
+recommended_stack: unset
 selected_stack: bash
 open_questions: unset
 decisions: unset
@@ -236,9 +235,8 @@ target_users: internal platform team
 core_features: high-throughput messaging
 constraints: backward compatibility required
 project_archetype: system-platform
-stack_candidate_1: kafka
-stack_candidate_2: rabbitmq
-stack_candidate_3: nats
+stack_candidates: kafka, rabbitmq, nats
+recommended_stack: kafka
 selected_stack: kafka
 open_questions: unset
 decisions: unset
@@ -258,9 +256,8 @@ target_users: unset
 core_features: unset
 constraints: unset
 project_archetype: unset
-stack_candidate_1: unset
-stack_candidate_2: unset
-stack_candidate_3: unset
+stack_candidates: unset
+recommended_stack: unset
 selected_stack: unset
 open_questions: unset
 decisions: unset
@@ -306,9 +303,8 @@ target_users: internal developers
 core_features: auth and dashboard
 constraints: unset
 project_archetype: service-app
-stack_candidate_1: unset
-stack_candidate_2: unset
-stack_candidate_3: unset
+stack_candidates: unset
+recommended_stack: unset
 selected_stack: bash
 open_questions: unset
 decisions: unset
@@ -567,9 +563,8 @@ target_users: internal developers
 core_features: auth and dashboard
 constraints: unset
 project_archetype: service-app
-stack_candidate_1: unset
-stack_candidate_2: unset
-stack_candidate_3: unset
+stack_candidates: unset
+recommended_stack: unset
 selected_stack: bash
 open_questions: unset
 decisions: unset
@@ -593,9 +588,8 @@ target_users: internal developers
 core_features: auth and dashboard
 constraints: unset
 project_archetype: service-app
-stack_candidate_1: unset
-stack_candidate_2: unset
-stack_candidate_3: unset
+stack_candidates: unset
+recommended_stack: unset
 selected_stack: bash
 open_questions: unset
 decisions: unset
@@ -617,9 +611,8 @@ target_users: devs
 core_features: auth
 constraints: unset
 project_archetype: service-app
-stack_candidate_1: unset
-stack_candidate_2: unset
-stack_candidate_3: unset
+stack_candidates: unset
+recommended_stack: unset
 selected_stack: bash
 open_questions: unset
 decisions: unset
@@ -649,9 +642,8 @@ target_users: devs
 core_features: auth
 constraints: unset
 project_archetype: service-app
-stack_candidate_1: unset
-stack_candidate_2: unset
-stack_candidate_3: unset
+stack_candidates: unset
+recommended_stack: unset
 selected_stack: bash
 open_questions: unset
 decisions: unset
@@ -692,9 +684,8 @@ target_users: devs
 core_features: auth
 constraints: unset
 project_archetype: service-app
-stack_candidate_1: unset
-stack_candidate_2: unset
-stack_candidate_3: unset
+stack_candidates: unset
+recommended_stack: unset
 selected_stack: bash
 open_questions: unset
 decisions: unset

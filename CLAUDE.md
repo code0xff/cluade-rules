@@ -63,7 +63,7 @@ rules/는 모든 작업에 항상 적용된다. 실행 엔진/모델은 `.claude
 새 프로젝트 시작 시 `/init-project`를 먼저 실행한다.
 
 - 프로젝트 목표/대상 사용자/핵심 기능/제약 확정
-- 스택 3안 비교 후 `selected_stack` 확정
+- 스택 후보 비교 후 `recommended_stack` 추천, `selected_stack` 확정
 - 엔진 세트 선택: `claude-default` 또는 `generic-ai`
 - plan/build/review 엔진 고정
 - 필요 시 단계별 모델 고정

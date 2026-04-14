@@ -34,10 +34,17 @@ target_users="$(normalize_value "$(get_value target_users)")"
 core_features="$(normalize_value "$(get_value core_features)")"
 constraints="$(normalize_value "$(get_value constraints)")"
 project_archetype="$(get_value project_archetype)"
-stack_1="$(normalize_value "$(get_value stack_candidate_1)")"
-stack_2="$(normalize_value "$(get_value stack_candidate_2)")"
-stack_3="$(normalize_value "$(get_value stack_candidate_3)")"
+stack_candidates_raw="$(get_value stack_candidates)"
+recommended_stack="$(normalize_value "$(get_value recommended_stack)")"
 selected_stack="$(normalize_value "$(get_value selected_stack)")"
+
+# 쉼표 구분 후보 목록을 번호 목록으로 변환
+if [ -n "$stack_candidates_raw" ] && [ "$stack_candidates_raw" != "unset" ]; then
+  candidate_list="$(echo "$stack_candidates_raw" | tr ',' '\n' | \
+    sed 's/^ *//;s/ *$//' | awk 'NF{print NR". "$0}')"
+else
+  candidate_list="(to be confirmed)"
+fi
 open_questions="$(normalize_value "$(get_value open_questions)")"
 
 mkdir -p "$DOCS_DIR"
@@ -182,9 +189,11 @@ cat > "$DOCS_DIR/stack-decision.md" <<DOC
 
 ## Candidate Options
 
-1. ${stack_1}
-2. ${stack_2}
-3. ${stack_3}
+${candidate_list}
+
+## Recommended
+
+- ${recommended_stack}
 
 ## Selected
 
