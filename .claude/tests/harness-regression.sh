@@ -42,6 +42,7 @@ run_expect_fail_pipe() {
 cleanup() {
   cp "$AUTOMATION_BAK" .claude/project-automation.md
   cp "$APPROVALS_BAK" .claude/project-approvals.md
+  cp "$CONTRACT_BAK" .claude/completion-contract.md
   mkdir -p .nightwalker
   if [ -s "$SESSION_BAK" ]; then cp "$SESSION_BAK" .nightwalker/session.yaml; else rm -f .nightwalker/session.yaml; fi
   rm -f .devharness/session.yaml
@@ -56,13 +57,16 @@ cleanup() {
   rm -rf docs/workstreams
   rmdir docs 2>/dev/null || true
   rm -f "$AUTOMATION_BAK" "$APPROVALS_BAK"
+  rm -f "$CONTRACT_BAK"
 }
 
 AUTOMATION_BAK="$(mktemp)"
 APPROVALS_BAK="$(mktemp)"
+CONTRACT_BAK="$(mktemp)"
 SESSION_BAK="$(mktemp)"
 cp .claude/project-automation.md "$AUTOMATION_BAK"
 cp .claude/project-approvals.md "$APPROVALS_BAK"
+cp .claude/completion-contract.md "$CONTRACT_BAK"
 [ -f .nightwalker/session.yaml ] && cp .nightwalker/session.yaml "$SESSION_BAK" || true
 trap cleanup EXIT
 
@@ -148,6 +152,12 @@ run_expect_ok "file-protection non-policy file passes silently" sh -c \
 run_expect_ok "file-protection policy file warns in report mode" sh -c \
   "printf '{\"tool_input\":{\"file_path\":\".claude/project-profile.md\"}}' | .claude/hooks/validate-file-protection.sh >/dev/null 2>/dev/null"
 
+run_expect_ok "file-protection rules file warns in report mode" sh -c \
+  "printf '{\"tool_input\":{\"file_path\":\".claude/rules/security.md\"}}' | .claude/hooks/validate-file-protection.sh >/dev/null 2>/dev/null"
+
+run_expect_ok "file-protection completion contract warns in report mode" sh -c \
+  "printf '{\"tool_input\":{\"file_path\":\".claude/completion-contract.md\"}}' | .claude/hooks/validate-file-protection.sh >/dev/null 2>/dev/null"
+
 run_expect_ok "automation gates push" .claude/hooks/run-automation-gates.sh push
 run_expect_ok "quality gates push" .claude/hooks/run-quality-gates.sh push
 run_expect_ok "engine readiness check" .claude/hooks/check-engine-readiness.sh
@@ -208,6 +218,8 @@ run_expect_ok "qa check test mode" sh -c \
 run_expect_ok "verify check test mode" sh -c \
   'NIGHTWALKER_TEST_MODE=true .claude/hooks/run-verify-check.sh "ci-verify" >/dev/null'
 run_expect_ok "done check report-only" .claude/hooks/run-done-check.sh
+run_expect_ok "done check reports pending when completion commands incomplete" sh -c \
+  '.claude/hooks/run-done-check.sh | grep -q "check\\[artifact_check_cmd\\]=pending" && .claude/hooks/run-done-check.sh | grep -Eq "pending_count=[1-9]"'
 
 run_expect_ok "autopilot start" sh -c \
   'NIGHTWALKER_TEST_MODE=true AUTOPILOT_SKIP_VCS_WRITE=true .claude/hooks/run-autopilot.sh start "ci-regression"'
@@ -277,6 +289,8 @@ decisions: unset
 RESET
 exit $result'
 run_expect_ok "qa workstream registration" sh -c '
+rm -rf docs/workstreams
+rm -f .claude/state/qa-registry.json .claude/state/qa-report.md
 cat > .claude/state/qa-report.md <<'"'"'EOF'"'"'
 # QA Report
 - status: fail
@@ -292,6 +306,8 @@ EOF
 test -d docs/workstreams &&
 test "$(find docs/workstreams -type f | wc -l | tr -d " ")" -ge 1'
 run_expect_fail "qa workstream registration capped" sh -c '
+rm -rf docs/workstreams
+rm -f .claude/state/qa-registry.json .claude/state/qa-report.md
 cat > .claude/state/qa-report.md <<'"'"'EOF'"'"'
 # QA Report
 - status: fail
@@ -306,7 +322,7 @@ EOF
 for _ in 1 2 3; do .claude/hooks/register-qa-workstream.sh "ci-qa" >/dev/null || true; done
 .claude/hooks/register-qa-workstream.sh "ci-qa" >/dev/null'
 run_expect_ok "project onboarding flow" .claude/hooks/run-project-onboarding.sh
-run_expect_ok "onboarding auto-starts autopilot when ready" sh -c '
+run_expect_ok "onboarding stays pending-automation when completion contract unset" sh -c '
 mkdir -p .nightwalker
 cat > .nightwalker/session.yaml <<'"'"'EOF'"'"'
 schema_version: 1
@@ -322,8 +338,42 @@ selected_stack: bash
 open_questions: unset
 decisions: unset
 EOF
+rm -f .claude/state/autopilot-state.json &&
 NIGHTWALKER_TEST_MODE=true AUTOPILOT_SKIP_VCS_WRITE=true .claude/hooks/run-project-onboarding.sh >/dev/null &&
-test "$(jq -r ".status" .claude/state/autopilot-state.json)" = "completed"'
+grep -q "status: pending-automation" ONBOARDING_READY.md &&
+test ! -f .claude/state/autopilot-state.json'
+run_expect_ok "onboarding auto-starts autopilot when done-check commands configured" sh -c '
+tmpdir="$(mktemp -d)"
+cp -R .claude "$tmpdir/.claude"
+mkdir -p "$tmpdir/.nightwalker"
+cat > "$tmpdir/package.json" <<'"'"'EOF'"'"'
+{
+  "name": "nightwalker-onboarding-test",
+  "scripts": {
+    "lint": "echo lint",
+    "build": "echo build",
+    "test": "echo test",
+    "security": "echo security"
+  }
+}
+EOF
+cat > "$tmpdir/.nightwalker/session.yaml" <<'"'"'EOF'"'"'
+schema_version: 1
+status: proposed
+project_goal: ci regression goal
+target_users: internal developers
+core_features: auth and dashboard
+constraints: unset
+project_archetype: service-app
+stack_candidates: unset
+recommended_stack: unset
+selected_stack: bash
+open_questions: unset
+decisions: unset
+EOF
+(cd "$tmpdir" && NIGHTWALKER_TEST_MODE=true AUTOPILOT_SKIP_VCS_WRITE=true ./.claude/hooks/run-project-onboarding.sh >/dev/null) &&
+test "$(jq -r ".status" "$tmpdir/.claude/state/autopilot-state.json")" = "completed" &&
+rm -rf "$tmpdir"'
 run_expect_ok "bootstrap project helper" scripts/bootstrap-project.sh --skip-onboarding
 run_expect_ok "bootstrap project standalone install" sh -c \
   'tmpdir=$(mktemp -d) && NIGHTWALKER_SOURCE="$PWD" scripts/bootstrap-project.sh "$tmpdir" --skip-onboarding && test -d "$tmpdir/.claude" && test -d "$tmpdir/.nightwalker" && rm -rf "$tmpdir"'

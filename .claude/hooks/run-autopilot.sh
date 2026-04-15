@@ -368,12 +368,27 @@ run_qa_stage() {
 run_delivery_stage() {
   local goal="$1"
   local unset_enforcement="$2"
-  local auto_commit auto_push allow_auto_push commit_message done_report unset_report
+  local auto_commit auto_push allow_auto_push commit_message done_report unset_report done_status pending_count failed_count
 
   "$STATE_HOOK" checkpoint "delivery" "run completion contract checks"
-  done_report="$("$DONE_CHECK_HOOK")"
+  done_report="$("$DONE_CHECK_HOOK" 2>&1)" && done_status=0 || done_status=$?
   if [ -n "$done_report" ]; then
     echo "$done_report" >&2
+  fi
+  pending_count="$(echo "$done_report" | grep -E '^pending_count=' | head -n 1 | sed -E 's/^pending_count=//' || true)"
+  failed_count="$(echo "$done_report" | grep -E '^failed_count=' | head -n 1 | sed -E 's/^failed_count=//' || true)"
+  [ -z "$pending_count" ] && pending_count=0
+  [ -z "$failed_count" ] && failed_count=0
+
+  if [ "$done_status" -ne 0 ]; then
+    "$STATE_HOOK" fail "done_check_blocked"
+    return 2
+  fi
+  if [ "$failed_count" -gt 0 ]; then
+    "$STATE_HOOK" defer manual_followups "done-check failed: $(echo "$done_report" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g')" >/dev/null 2>&1 || true
+  fi
+  if [ "$pending_count" -gt 0 ]; then
+    "$STATE_HOOK" defer manual_followups "done-check pending: $(echo "$done_report" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g')" >/dev/null 2>&1 || true
   fi
 
   unset_report="$("$UNSET_REPORT_HOOK" || true)"

@@ -12,7 +12,21 @@ fi
 
 mkdir -p "$(dirname "$OUT_FILE")"
 
-unset_lines=$(grep -E '^- [a-z0-9_]+:[[:space:]]*unset$' "$AUTOMATION_FILE" || true)
+unset_lines=$(grep -E '^- [a-z0-9_]+:[[:space:]]*unset$' "$AUTOMATION_FILE" | awk '
+  {
+    key=$0
+    sub(/^- /, "", key)
+    sub(/:.*/, "", key)
+    if (key == "engine_cmd_openai") next
+    if (key == "engine_cmd_cursor") next
+    if (key == "engine_cmd_gemini") next
+    if (key == "engine_cmd_copilot") next
+    if (key == "quality_coverage_cmd") next
+    if (key == "quality_perf_cmd") next
+    if (key == "quality_architecture_cmd") next
+    print
+  }
+' || true)
 unset_lines_contract=""
 if [ -f "$CONTRACT_FILE" ]; then
   unset_lines_contract=$(grep -E '^- [a-z0-9_]+:[[:space:]]*unset$' "$CONTRACT_FILE" || true)
@@ -37,6 +51,7 @@ fi
       BEGIN { count=0 }
       {
         line=$0
+        if (line ~ /^[[:space:]]*$/) next
         sub(/^- /, "", line)
         sub(/:.*/, "", line)
         count++

@@ -25,6 +25,7 @@ Allowlist에 없는 변경성 명령(예: git add/commit/push, 의존성 변경,
 - force push
 - secrets 또는 credentials 관련 파일 변경
 - rules/skills/profile 수정
+- CLAUDE.md, completion-contract, settings.json 수정
 - project-automation 정책 수정
 
 ## Sandbox / Escalation Policy

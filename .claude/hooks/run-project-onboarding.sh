@@ -94,6 +94,44 @@ is_ready_for_execution() {
   return 0
 }
 
+has_required_gate_setup() {
+  local lint_cmd build_cmd test_cmd security_cmd quality_cmd
+  lint_cmd="$(get_automation_value lint_cmd)"
+  build_cmd="$(get_automation_value build_cmd)"
+  test_cmd="$(get_automation_value test_cmd)"
+  security_cmd="$(get_automation_value security_cmd)"
+  quality_cmd="$(get_automation_value quality_cmd)"
+
+  if [ -z "$lint_cmd" ] || [ "$lint_cmd" = "unset" ] || \
+     [ -z "$build_cmd" ] || [ "$build_cmd" = "unset" ] || \
+     [ -z "$test_cmd" ] || [ "$test_cmd" = "unset" ] || \
+     [ -z "$security_cmd" ] || [ "$security_cmd" = "unset" ] || \
+     [ -z "$quality_cmd" ] || [ "$quality_cmd" = "unset" ]; then
+    return 1
+  fi
+
+  return 0
+}
+
+has_required_done_check_setup() {
+  local artifact_cmd smoke_cmd
+  artifact_cmd="$(grep -E "^- artifact_check_cmd:" .claude/completion-contract.md | head -n 1 | sed -E 's/^- artifact_check_cmd:[[:space:]]*//' || true)"
+  smoke_cmd="$(grep -E "^- run_smoke_cmd:" .claude/completion-contract.md | head -n 1 | sed -E 's/^- run_smoke_cmd:[[:space:]]*//' || true)"
+
+  if [ -z "$artifact_cmd" ] || [ "$artifact_cmd" = "unset" ] || \
+     [ -z "$smoke_cmd" ] || [ "$smoke_cmd" = "unset" ] || \
+     [[ "$artifact_cmd" =~ ^echo[[:space:]]+ ]] || \
+     [[ "$smoke_cmd" =~ ^echo[[:space:]]+ ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
+is_ready_for_autopilot() {
+  is_ready_for_execution && has_required_gate_setup && has_required_done_check_setup
+}
+
 get_automation_value() {
   local key="$1"
   grep -E "^- ${key}:" "$AUTOMATION_FILE" | head -n 1 | sed -E "s/^- ${key}:[[:space:]]*//" || true
@@ -160,7 +198,7 @@ maybe_start_autopilot() {
   if [ "$previous_status" = "ready" ]; then
     return 0
   fi
-  if ! is_ready_for_execution; then
+  if ! is_ready_for_autopilot; then
     return 0
   fi
   if [ ! -x "$AUTOPILOT_HOOK" ]; then
@@ -183,6 +221,8 @@ render_ready_report() {
 
   if ! is_ready_for_execution; then
     status="pending-input"
+  elif ! has_required_gate_setup || ! has_required_done_check_setup; then
+    status="pending-automation"
   fi
 
   if [ "$status" = "ready" ]; then
@@ -211,10 +251,13 @@ render_ready_report() {
 
 - If status is ready, run a quick docs sanity pass for docs/architecture.md, docs/roadmap.md, and docs/acceptance-criteria.md, then continue directly into autopilot without asking for next-action selection.
 - If status is pending-input, fill project_goal, target_users, project_archetype, and selected_stack first.
+- If status is pending-automation, confirm build/test/security/quality gates and completion contract commands before enabling autopilot.
 EOF2
 
   if [ "$status" = "pending-input" ]; then
     echo "run-project-onboarding 경고: session.yaml에 미확정 값이 있습니다 (project_goal/target_users/core_features/project_archetype/selected_stack)."
+  elif [ "$status" = "pending-automation" ]; then
+    echo "run-project-onboarding 경고: autopilot 시작 전 gate/quality 또는 completion contract 명령을 먼저 확정해야 합니다."
   fi
 }
 

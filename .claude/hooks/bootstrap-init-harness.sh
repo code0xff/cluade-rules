@@ -39,8 +39,8 @@ if [ ! -f "$CONTRACT_FILE" ]; then
 
 - done_enforcement: report
 - artifact_definition: interface contract validation completed
-- artifact_check_cmd: echo "artifact check is not configured"
-- run_smoke_cmd: echo "run smoke is not configured"
+- artifact_check_cmd: unset
+- run_smoke_cmd: unset
 - acceptance_test_cmd: .claude/hooks/run-automation-gates.sh push
 - release_readiness_cmd: .claude/hooks/run-quality-gates.sh push
 
@@ -63,8 +63,8 @@ EOF
 
 - done_enforcement: report
 - artifact_definition: release artifact generated
-- artifact_check_cmd: echo "artifact check is not configured"
-- run_smoke_cmd: echo "run smoke is not configured"
+- artifact_check_cmd: unset
+- run_smoke_cmd: unset
 - acceptance_test_cmd: .claude/hooks/run-automation-gates.sh push
 - release_readiness_cmd: .claude/hooks/run-quality-gates.sh push
 EOF
@@ -265,6 +265,8 @@ set_automation_if_unset "auto_start_autopilot_on_ready" "true"
 set_automation_if_unset "auto_commit_on_success" "true"
 set_automation_if_unset "auto_push_on_success" "false"
 set_automation_if_unset "allow_auto_push" "false"
+set_automation_if_unset "run_gates_on_commit" "true"
+set_automation_if_unset "run_quality_on_commit" "true"
 set_automation_if_unset "intent_retry_attempts" "2"
 set_automation_if_unset "intent_timeout_seconds" "300"
 set_automation_if_unset "qa_max_reopen_attempts" "3"
@@ -345,8 +347,16 @@ quality_cmd="$(get_automation_value quality_cmd)"
 
 set_contract_key "done_enforcement" "report"
 set_contract_key "artifact_definition" "release artifact generated"
-set_contract_key "artifact_check_cmd" "$build_cmd"
-set_contract_key "run_smoke_cmd" 'echo "run smoke is not configured"'
+if [[ "$build_cmd" =~ ^echo[[:space:]]+ ]] || [ -z "$build_cmd" ] || [ "$build_cmd" = "unset" ]; then
+  set_contract_key "artifact_check_cmd" "unset"
+else
+  set_contract_key "artifact_check_cmd" "$build_cmd"
+fi
+if [[ "$test_cmd" =~ ^echo[[:space:]]+ ]] || [ -z "$test_cmd" ] || [ "$test_cmd" = "unset" ]; then
+  set_contract_key "run_smoke_cmd" "unset"
+else
+  set_contract_key "run_smoke_cmd" "$test_cmd"
+fi
 set_contract_key "acceptance_test_cmd" "$test_cmd"
 set_contract_key "release_readiness_cmd" "$quality_cmd"
 
