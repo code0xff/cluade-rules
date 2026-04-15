@@ -136,6 +136,21 @@ run_expect_ok "risk policy report-only for high-tier command" sh -c \
 run_expect_ok "risk classifier output valid tier" sh -c \
   'tier=$(.claude/hooks/classify-risk.sh "git commit -m \"feat: a\""); echo "$tier" | grep -Eq "^(low|medium|high|critical)$"'
 
+run_expect_ok "risk classifier critical tier for force push" sh -c \
+  'tier=$(.claude/hooks/classify-risk.sh "git push --force"); [ "$tier" = "critical" ]'
+
+run_expect_ok "risk classifier high tier for npm install" sh -c \
+  'tier=$(.claude/hooks/classify-risk.sh "npm install left-pad"); [ "$tier" = "high" ]'
+
+run_expect_ok "risk classifier medium tier for git commit" sh -c \
+  'tier=$(.claude/hooks/classify-risk.sh "git commit -m feat: x"); [ "$tier" = "medium" ]'
+
+run_expect_ok "risk classifier low tier for read-only command" sh -c \
+  'tier=$(.claude/hooks/classify-risk.sh "ls -la"); [ "$tier" = "low" ]'
+
+run_expect_ok "risk classifier raises to critical in chained command" sh -c \
+  'tier=$(.claude/hooks/classify-risk.sh "echo hi; git push --force"); [ "$tier" = "critical" ]'
+
 run_expect_ok "pre-approval report-only for chained command bypass" sh -c \
   "printf '{\"tool_input\":{\"command\":\"echo hi; mkdir bypass-dir\"}}' | .claude/hooks/validate-pre-approval.sh >/dev/null"
 
