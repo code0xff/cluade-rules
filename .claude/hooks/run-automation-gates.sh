@@ -44,6 +44,13 @@ run_gate() {
     fi
     return 0
   fi
+  if [[ "$cmd" =~ ^echo[[:space:]]+ ]]; then
+    echo "[automation-gate] ${gate_name}: skip (echo-placeholder: configure a real command)" >&2
+    if [ -x "$STATE_HOOK" ]; then
+      "$STATE_HOOK" gate "$gate_name" "skip" "echo-placeholder: configure a real command"
+    fi
+    return 0
+  fi
   echo "[automation-gate] ${gate_name}: ${cmd}" >&2
   if eval "$cmd"; then
     if [ -x "$STATE_HOOK" ]; then

@@ -233,6 +233,22 @@ run_expect_ok "qa check test mode" sh -c \
 run_expect_ok "verify check test mode" sh -c \
   'NIGHTWALKER_TEST_MODE=true .claude/hooks/run-verify-check.sh "ci-verify" >/dev/null'
 run_expect_ok "done check report-only" .claude/hooks/run-done-check.sh
+run_expect_fail "done check blocks when enforcement is block mode" sh -c '
+  tmp_contract="$(mktemp)"
+  cat > "$tmp_contract" <<'"'"'EOF'"'"'
+# Completion Contract
+- done_enforcement: block
+- artifact_definition: release artifact generated
+- artifact_check_cmd: unset
+- run_smoke_cmd: unset
+- acceptance_test_cmd: unset
+- release_readiness_cmd: unset
+EOF
+  CONTRACT_FILE="$tmp_contract" .claude/hooks/run-done-check.sh >/dev/null 2>&1
+  rc=$?
+  rm -f "$tmp_contract"
+  exit $rc
+'
 run_expect_ok "done check reports pending when completion commands incomplete" sh -c '
   tmp_contract="$(mktemp)"
   cat > "$tmp_contract" <<'"'"'EOF'"'"'
@@ -258,6 +274,29 @@ run_expect_ok "autopilot state completed" sh -c \
   'test "$(jq -r ".status" .claude/state/autopilot-state.json)" = "completed"'
 run_expect_ok "autopilot followups recorded" sh -c \
   'test "$(jq ".manual_followups | length" .claude/state/autopilot-state.json)" -ge 1'
+run_expect_ok "autopilot resume from mid-failure stage" sh -c '
+  mkdir -p .claude/state
+  cat > .claude/state/autopilot-state.json <<'"'"'EOF'"'"'
+{
+  "session_id": "",
+  "goal": "ci-resume-test",
+  "status": "failed",
+  "current_cycle": 1,
+  "last_stage": "validate",
+  "last_gate": "",
+  "last_gate_result": "",
+  "updated_at": "",
+  "error": "test injection",
+  "deferred_decisions": [],
+  "assumptions": [],
+  "manual_followups": [],
+  "qa_remediations": [],
+  "history": []
+}
+EOF
+  NIGHTWALKER_TEST_MODE=true AUTOPILOT_SKIP_VCS_WRITE=true .claude/hooks/run-autopilot.sh resume &&
+  test "$(jq -r ".status" .claude/state/autopilot-state.json)" = "completed"
+'
 run_expect_ok "final report generated" test -f .claude/state/final-report.md
 run_expect_ok "unset config report generated" .claude/hooks/report-unset-config.sh
 run_expect_ok "render onboarding docs" sh -c '
