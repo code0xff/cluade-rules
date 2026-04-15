@@ -11,7 +11,3 @@
 - run_smoke_cmd: bash .claude/tests/harness-regression.sh
 - acceptance_test_cmd: .claude/hooks/validate-project-profile.sh && .claude/hooks/validate-project-approvals.sh && .claude/hooks/validate-project-automation.sh
 - release_readiness_cmd: find .claude/hooks -type f -name "*.sh" -print0 | xargs -0 -I{} bash -n "{}" && .claude/hooks/validate-project-profile.sh && .claude/hooks/validate-project-approvals.sh && .claude/hooks/validate-project-automation.sh && .claude/hooks/validate-completion-contract.sh
-- interface_contract_check: interface contract check is not configured
-- compatibility_check: compatibility check is not configured
-- failure_mode_check: failure mode check is not configured
-- operability_check: operability check is not configured
