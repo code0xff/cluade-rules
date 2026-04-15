@@ -2,6 +2,8 @@
 # 커밋 메시지 형식 검증: type: message
 # commits.md에 정의된 type: feat, fix, refactor, test, docs, chore
 
+set -euo pipefail
+
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
 

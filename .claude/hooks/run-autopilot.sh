@@ -590,6 +590,10 @@ case "$ACTION" in
       last_stage="plan"
     fi
     start_stage="$last_stage"
+    saved_goal=$(jq -r '.goal // ""' "$STATE_FILE")
+    if [ -n "$saved_goal" ] && [ "$saved_goal" != "null" ]; then
+      GOAL="$saved_goal"
+    fi
     ;;
   *)
     echo "usage: $0 {start <goal>|resume}" >&2

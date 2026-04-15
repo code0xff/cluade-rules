@@ -33,7 +33,7 @@
 
 - 입력: 사용자 요구사항, 프로젝트 문서, 파일 트리
 - 출력: 목표/제약, 구현 단계, 위험 요소, 검증 계획
-- 필수 헤딩: `## Goal And Constraints`, `## Approach`, `## Implementation Plan`, `## Uncertainties`
+- 필수 헤딩: `## Goal And Constraints`, `## Acceptance Criteria`, `## Approach`, `## Implementation Plan`, `## Uncertainties`
 - 완료 조건: 실행 가능한 단계별 계획이 확정됨
 
 ### Build

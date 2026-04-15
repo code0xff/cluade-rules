@@ -3,7 +3,7 @@
 ## Profile
 
 - profile_name: generic-ai
-- plan_engine: codex
+- plan_engine: openai
 - build_engine: claude
 - review_engine: codex
 
