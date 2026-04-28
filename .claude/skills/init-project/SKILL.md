@@ -34,12 +34,12 @@ user-invocable: true
    - 후보 중 가장 추천하는 1안을 명시하고 그 이유를 설명한다.
 6. 사용자가 최종 `selected_stack`을 고르게 한다.
 7. 확정값을 `session.yaml`에 반영하도록 편집을 수행한다.
-8. 아래 명령을 실행해 문서/정책을 동기화한다.
+8. 아래 명령을 **정확히 한 번** 실행해 문서/정책을 동기화한다. 이 명령은 step 8에서만 호출한다. 그 이전 단계(archetype 확정, stack 선택 등)에서 상태 확인이나 동기화 목적으로 절대 호출하지 않는다.
 
 ```bash
 .claude/hooks/run-project-onboarding.sh
 ```
-9. `status=ready`이면 `docs/architecture.md`, `docs/roadmap.md`를 빠르게 검토해 `unset/TBD` 같은 미확정 placeholder가 남아 있는지 확인하고 즉시 보완한다.
+9. `status=ready`이면 `docs/architecture.md`, `docs/roadmap.md`를 빠르게 검토해 `unset/TBD` 같은 미확정 placeholder가 남아 있는지 확인하고 즉시 보완한다. **이 단계에서 `run-project-onboarding.sh`를 다시 호출하지 않는다.** docs 파일을 직접 편집한다.
 10. `status=ready`이고 `allow_midway_user_prompt=false`이면 다음 액션 선택을 사용자에게 묻지 않는다. 권장 경로를 자동 적용해 곧바로 `/autopilot` 실행으로 이어간다.
 
 ## 산출물
